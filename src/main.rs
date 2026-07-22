@@ -34,6 +34,7 @@ impl Plugin for AppPlugin {
                 }),
             bevy_framepace::FramepacePlugin,
             bevy_rand::prelude::EntropyPlugin::<bevy_prng::ChaCha20Rng>::default(),
+            bevy_ecs_ldtk::prelude::LdtkPlugin,
         ));
 
         #[cfg(feature = "dev")]

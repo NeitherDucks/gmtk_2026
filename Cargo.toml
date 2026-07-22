@@ -24,6 +24,8 @@ tracing = { version = "0.1", features = [
     "max_level_debug",
     "release_max_level_warn",
 ] }
+bevy_ecs_ldtk = "0.15.0"
+bevy_ecs_tilemap = "0.19.0"
 
 
 [target.wasm32-unknown-unknown.dependencies]
