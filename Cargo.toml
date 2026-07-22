@@ -1,6 +1,6 @@
 [package]
 name = "gmtk_2026"
-authors = ["NeitherDucks <jolan92@gmail.com>", "Targrub <targrub@gmail.com>"]
+authors = ["NeitherDucks <jolan92@gmail.com>", "Targrub <targrub@gmail.com>", "Mariano Mendez <marianomendezb@gmail.com>"]
 version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
