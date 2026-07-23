@@ -9,6 +9,7 @@ pub mod menus;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use bevy_ecs_ldtk::LdtkProjectHandle;
+use bevy_aseprite_ultra::prelude::*;
 
 use crate::asset_loading::AssetHandles;
 
@@ -60,6 +61,7 @@ fn main() -> AppExit {
         bevy_framepace::FramepacePlugin,
         bevy_rand::prelude::EntropyPlugin::<bevy_prng::ChaCha20Rng>::default(),
         bevy_ecs_ldtk::prelude::LdtkPlugin,
+        AsepriteUltraPlugin,
     ));
 
     #[cfg(feature = "dev")]
