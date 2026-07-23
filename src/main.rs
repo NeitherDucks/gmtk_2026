@@ -8,8 +8,8 @@ pub mod gamemodes;
 pub mod menus;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
-use bevy_ecs_ldtk::LdtkProjectHandle;
 use bevy_aseprite_ultra::prelude::*;
+use bevy_ecs_ldtk::LdtkProjectHandle;
 
 use crate::asset_loading::AssetHandles;
 

@@ -1,8 +1,8 @@
 //! Anything regarding loading assets
 
 use bevy::{asset::UntypedAssetId, prelude::*};
-use bevy_ecs_ldtk::LdtkProjectHandle;
 use bevy_aseprite_ultra::prelude::*;
+use bevy_ecs_ldtk::LdtkProjectHandle;
 
 use crate::GameState;
 
