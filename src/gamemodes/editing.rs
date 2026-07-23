@@ -1,7 +1,19 @@
+#![allow(unused)]
+
 use crate::asset_loading::AssetHandles;
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_ldtk::{LdtkWorldBundle, LevelSelection};
+
+#[derive(Resource)]
+pub struct DwarfCharacter {
+    color: DwarfColor,
+    action: DwarfAction,
+    tool: DwarfTool,
+    resource: DwarfResource,
+    body: Entity,
+    parts: Entity,
+}
 
 pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     // We need a camera
@@ -23,40 +35,44 @@ pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     // This is what selects the level inside the ldtk file.
     commands.insert_resource(LevelSelection::index(0));
 
+    spawn_initial_dwarf(commands.reborrow(), &handles);
+}
+
+fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
     let x = 1.0;
     let y = 5.0;
 
-    let tx = x * 16.0 + 8.0; // these formulas aren't correct yet
-    let ty = y * 16.0 - 8.0; // plus they should be (and probably are)
-    // in a world_to_screen-type function
+    // these formulas aren't correct yet plus they should be (and probably are) in a world_to_screen-type function
+    let tx = x * 16.0 + 8.0;
+    let ty = y * 16.0 - 8.0;
 
     const BODY_Z: f32 = 2.0_f32;
     const PARTS_Z: f32 = 3.0_f32;
 
     let body_color = DwarfColor::Blue;
     let body_action = DwarfAction::Moving;
-    let _parts_action = DwarfAction::Moving;
     let tool = DwarfTool::Shovel;
     let resource = DwarfResource::Gold;
 
-    commands.spawn((
+    let dwarf_body_entity = commands.spawn((
         Name::new("TestDwarfBody"),
         Sprite::default(),
         Transform::from_translation(Vec3::new(tx, ty, BODY_Z)),
         AseAnimation {
             animation: Animation::default(),
-            aseprite: clone_dwarf_body_animation(body_color, body_action, &handles),
+            aseprite: clone_dwarf_body_animation(body_color, body_action, handles),
         },
-    ));
-    commands.spawn((
+    )).id();
+    let dwarf_parts_entity = commands.spawn((
         Name::new("TestDwarfParts"),
         Sprite::default(),
         Transform::from_translation(Vec3::new(tx, ty, PARTS_Z)),
         AseAnimation {
             animation: Animation::default(),
-            aseprite: clone_dwarf_parts_animation(body_action, tool, resource, &handles),
+            aseprite: clone_dwarf_parts_animation(body_action, tool, resource, handles),
         },
-    ));
+    )).id();
+    commands.insert_resource(DwarfCharacter { action: body_action, color: body_color, resource, tool, body: dwarf_body_entity, parts: dwarf_parts_entity});
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -74,7 +90,7 @@ pub enum DwarfAction {
     Swing,     // only pickaxe or multitool; file for body action is PickaxeSwing
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum DwarfColor {
     Blue,
     Red,
@@ -82,14 +98,14 @@ pub enum DwarfColor {
     Purple,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum DwarfResource {
     Stone, // only with shovel, pickaxe, multitool
     Iron,  // only with shovel, pickaxe, multitool
     Gold,  // only with shovel, pickaxe
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum DwarfTool {
     BareHands,
     MultiTool,
@@ -250,3 +266,39 @@ pub fn cleanup() {}
 pub fn setup_ui() {}
 
 pub fn cleanup_ui() {}
+
+pub fn dev_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>, mut dwarf: If<ResMut<DwarfCharacter>>, handles: Res<AssetHandles>) {
+    let mut body_action_changed = false;
+    let mut tool_changed = false;
+    if input.pressed(KeyCode::KeyT) {
+        // change tool
+        dwarf.tool = match dwarf.tool {
+            DwarfTool::BareHands => DwarfTool::Shovel,
+            DwarfTool::Shovel => DwarfTool::Dynamite,
+            DwarfTool::Dynamite => DwarfTool::MultiTool,
+            DwarfTool::MultiTool => DwarfTool::Pickaxe,
+            DwarfTool::Pickaxe => DwarfTool::BareHands,
+        };
+        tool_changed = true;
+    }
+    if input.pressed(KeyCode::KeyW) {
+        // if not Moving change to Moving
+        body_action_changed = true;
+    }
+    if input.pressed(KeyCode::KeyA) {
+        // if not Moving change to Moving
+        body_action_changed = true;
+    }
+    if input.pressed(KeyCode::KeyS) {
+        // if not Moving change to Moving
+        body_action_changed = true;
+    }
+    if input.pressed(KeyCode::KeyD) {
+        // if not Moving change to Moving
+        body_action_changed = true;
+    }
+    if tool_changed {
+        dwarf.parts = commands.spawn(AseAnimation { animation: default(), aseprite: clone_dwarf_parts_animation(dwarf.action, dwarf.tool, dwarf.resource, &handles)}).id();
+    }
+}
+

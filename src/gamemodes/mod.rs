@@ -13,6 +13,9 @@ impl Plugin for GameModesPlugin {
             OnEnter(GameState::EditLevel),
             (editing::setup, editing::setup_ui),
         )
+        .add_systems(Update,
+             editing::dev_input
+        )
         .add_systems(
             OnTransition {
                 exited: GameState::EditLevel,
