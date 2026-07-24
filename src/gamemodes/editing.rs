@@ -4,6 +4,69 @@ use crate::asset_loading::AssetHandles;
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_ldtk::{LdtkWorldBundle, LevelSelection};
+use std::collections::VecDeque;
+
+const DWARF_MOVE_SPEED: f32 = 50.0;
+const TILE_SIZE: f32 = 16.0;
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum DwarfDirection {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum DwarfAction {
+    Idle,
+    Moving,
+    Jump,
+    LightLanding,
+    HeavyLanding,
+    StandUp,
+    Shoveling, // only with shovel
+    Climbing,  // only bare hands
+    Light,     // only dynamite; file for body action is LightDynamite
+    Throw,     // only dynamite; file for body action is ThrowDynamite
+    Swing,     // only pickaxe or multitool; file for body action is PickaxeSwing
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum DwarfColor {
+    Blue,
+    Red,
+    Yellow,
+    Purple,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum DwarfResource {
+    Stone, // only with shovel, pickaxe, multitool
+    Iron,  // only with shovel, pickaxe, multitool
+    Gold,  // only with shovel, pickaxe
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum DwarfTool {
+    BareHands,
+    MultiTool,
+    Shovel,
+    Pickaxe,
+    Dynamite,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum DwarfActionRequest {
+    MoveForward,
+    ChangeTool(DwarfTool),
+    ChangeDirection(DwarfDirection),
+    TakeAction(DwarfAction),
+    ChangeColor(DwarfColor),
+}
+
+#[derive(Resource, Default)]
+pub struct ActionsRequested(pub VecDeque<DwarfActionRequest>);
 
 #[derive(Resource, Clone)]
 pub struct DwarfCharacter {
@@ -14,6 +77,7 @@ pub struct DwarfCharacter {
     resource: DwarfResource,
     body: Entity,
     parts: Entity,
+    move_distance: f32, // distance moved in current Moving action
 }
 
 pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
@@ -26,6 +90,8 @@ pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     // This is what selects the level inside the ldtk file.
     commands.insert_resource(LevelSelection::index(0));
 
+    commands.init_resource::<ActionsRequested>();
+
     spawn_initial_dwarf(commands.reborrow(), &handles);
 }
 
@@ -34,32 +100,33 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
     let y = 5.0;
 
     // these formulas aren't correct yet plus they should be (and probably are) in a world_to_screen-type function
-    let tx = x * 16.0 + 8.0;
-    let ty = y * 16.0 - 8.0;
+    let tx = x * TILE_SIZE + TILE_SIZE / 2.;
+    let ty = y * TILE_SIZE - TILE_SIZE / 2.;
 
     const BODY_Z: f32 = 2.0_f32;
     const PARTS_Z: f32 = 3.0_f32;
 
     let body_color = DwarfColor::Blue;
     let body_action = DwarfAction::Idle;
-    let direction = DwarfDirection::Left;
+    let direction = DwarfDirection::Right;
     let tool = DwarfTool::BareHands;
     let resource = DwarfResource::Gold;
 
     let dwarf_body_entity = commands
         .spawn((
-            Name::new("TestDwarfBody"),
+            Name::new("Body"),
             Sprite::default(),
             Transform::from_translation(Vec3::new(tx, ty, BODY_Z)),
         ))
         .id();
     let dwarf_parts_entity = commands
         .spawn((
-            Name::new("TestDwarfParts"),
+            Name::new("Parts"),
             Sprite::default(),
             Transform::from_translation(Vec3::new(tx, ty, PARTS_Z)),
         ))
         .id();
+
     let dwarf = DwarfCharacter {
         action: body_action,
         direction,
@@ -68,6 +135,7 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
         tool,
         body: dwarf_body_entity,
         parts: dwarf_parts_entity,
+        move_distance: 0.0,
     };
 
     // Add animations based on the dwarf's initial state
@@ -83,57 +151,7 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
     commands.insert_resource(dwarf);
 }
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum DwarfDirection {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum DwarfAction {
-    Idle,
-    Moving,
-    Jump,
-    LightLanding,
-    HeavyLanding,
-    StandUp,
-    Shoveling, // only with shovel
-    Climbing,  // only bare hands
-    Light,     // only dynamite; file for body action is LightDynamite
-    Throw,     // only dynamite; file for body action is ThrowDynamite
-    Swing,     // only pickaxe or multitool; file for body action is PickaxeSwing
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum DwarfColor {
-    Blue,
-    Red,
-    Yellow,
-    Purple,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum DwarfResource {
-    Stone, // only with shovel, pickaxe, multitool
-    Iron,  // only with shovel, pickaxe, multitool
-    Gold,  // only with shovel, pickaxe
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum DwarfTool {
-    BareHands,
-    MultiTool,
-    Shovel,
-    Pickaxe,
-    Dynamite,
-}
-
-fn clone_dwarf_body_animation(
-    dwarf: &DwarfCharacter,
-    handles: &AssetHandles,
-) -> Handle<Aseprite> {
+fn clone_dwarf_body_animation(dwarf: &DwarfCharacter, handles: &AssetHandles) -> Handle<Aseprite> {
     match dwarf.action {
         DwarfAction::Idle => handles.dwarf_body_blue_idle.clone(),
         DwarfAction::Moving => handles.dwarf_body_blue_moving.clone(),
@@ -149,10 +167,7 @@ fn clone_dwarf_body_animation(
     }
 }
 
-fn clone_dwarf_parts_animation(
-    dwarf: &DwarfCharacter,
-    handles: &AssetHandles,
-) -> Handle<Aseprite> {
+fn clone_dwarf_parts_animation(dwarf: &DwarfCharacter, handles: &AssetHandles) -> Handle<Aseprite> {
     match dwarf.action {
         DwarfAction::Idle => match dwarf.tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_idle.clone(),
@@ -285,8 +300,10 @@ fn update_dwarf_body_animation(
     dwarf: &DwarfCharacter,
     handles: &AssetHandles,
 ) {
+    // force Blue until have more dwarves
     let mut temp_dwarf = dwarf.clone();
     temp_dwarf.color = DwarfColor::Blue;
+
     let new_aseprite = clone_dwarf_body_animation(&temp_dwarf, handles);
     commands.entity(dwarf.body).insert(AseAnimation {
         animation: Animation::default(),
@@ -306,86 +323,194 @@ fn update_dwarf_parts_animation(
     });
 }
 
-pub fn dev_input(
+fn apply_movement(
+    dwarf: &mut DwarfCharacter,
+    target_direction: DwarfDirection,
+    dt: f32,
+    transform: &mut Transform,
+    apply_movement_fn: impl FnOnce(&mut Transform, f32),
+) -> (bool, bool) {
+    const DWARF_MOVE_SPEED: f32 = 50.0;
+    const TILE_SIZE: f32 = 16.0;
+
+    let mut direction_changed = false;
+    let mut action_changed = false;
+
+    // Start moving if Idle
+    if dwarf.action == DwarfAction::Idle {
+        dwarf.action = DwarfAction::Moving;
+        dwarf.direction = target_direction;
+        dwarf.move_distance = 0.0;
+        direction_changed = true;
+        action_changed = true;
+    }
+
+    // Keep moving if Moving and direction matches
+    if dwarf.action == DwarfAction::Moving && dwarf.direction == target_direction {
+        let distance_this_frame = DWARF_MOVE_SPEED * dt;
+        dwarf.move_distance += distance_this_frame;
+
+        if dwarf.move_distance >= TILE_SIZE {
+            // Finish Moving exactly one tile's distance
+            apply_movement_fn(
+                transform,
+                TILE_SIZE - (dwarf.move_distance - distance_this_frame),
+            );
+            dwarf.action = DwarfAction::Idle;
+            dwarf.move_distance = 0.0;
+            action_changed = true;
+        } else {
+            apply_movement_fn(transform, distance_this_frame);
+        }
+    }
+
+    (direction_changed, action_changed)
+}
+
+pub fn process_action_request(
     mut commands: Commands,
+    mut dwarf: If<ResMut<DwarfCharacter>>,
+    mut actions_requested: ResMut<ActionsRequested>,
+    handles: Res<AssetHandles>,
+    time: Res<Time>,
+    mut query: Query<&mut Transform>,
+) {
+    let dt = time.delta_secs();
+
+    if let Some(request) = actions_requested.0.pop_front() {
+        // start carrying it out
+        let mut direction_changed = false;
+        let mut body_action_changed = false;
+        let mut tool_changed = false;
+        let mut moved = false;
+
+        match request {
+            DwarfActionRequest::MoveForward => {
+                let current_direction = dwarf.direction;
+                if let Ok(mut transform) = query.get_mut(dwarf.body) {
+                    let (dir_changed, action_changed) = apply_movement(
+                        &mut dwarf,
+                        current_direction,
+                        dt,
+                        &mut transform,
+                        |t, dist| match current_direction {
+                            DwarfDirection::Up => t.translation.y += dist,
+                            DwarfDirection::Down => t.translation.y -= dist,
+                            DwarfDirection::Left => t.translation.x -= dist,
+                            DwarfDirection::Right => t.translation.x += dist,
+                        },
+                    );
+                    if dir_changed {
+                        direction_changed = true;
+                    }
+                    if action_changed {
+                        body_action_changed = true;
+                    }
+                    moved = true;
+                }
+            }
+            DwarfActionRequest::ChangeTool(new_tool) => {
+                if dwarf.tool != new_tool {
+                    dwarf.tool = new_tool;
+                    tool_changed = true;
+                }
+            }
+            DwarfActionRequest::ChangeDirection(new_direction) => {
+                if dwarf.direction != new_direction {
+                    dwarf.direction = new_direction;
+                    direction_changed = true;
+                }
+            }
+            DwarfActionRequest::TakeAction(new_action) => {
+                if dwarf.action != new_action {
+                    dwarf.action = new_action;
+                    body_action_changed = true;
+                }
+            }
+            DwarfActionRequest::ChangeColor(new_color) => {
+                if dwarf.color != new_color {
+                    dwarf.color = new_color;
+                    body_action_changed = true;
+                }
+            }
+        }
+
+        if direction_changed || body_action_changed {
+            update_dwarf_body_animation(&mut commands, &dwarf, &handles);
+        }
+        if direction_changed || tool_changed {
+            update_dwarf_parts_animation(&mut commands, &dwarf, &handles);
+        }
+
+        // Keep parts transform in sync with body transform
+        if moved {
+            let body_pos = query.get(dwarf.body).ok().map(|t| t.translation).unwrap();
+            if let Ok(mut parts_transform) = query.get_mut(dwarf.parts) {
+                parts_transform.translation = body_pos + Vec3::new(0.0, 0.0, 1.0); // keep parts z one greater than body
+            }
+        }
+    }
+}
+
+pub fn dev_input(
     input: Res<ButtonInput<KeyCode>>,
     mut dwarf: If<ResMut<DwarfCharacter>>,
-    handles: Res<AssetHandles>,
+    mut actions_requested: ResMut<ActionsRequested>,
 ) {
-    let mut direction_changed = false;
-    let mut body_action_changed = false;
-    let mut tool_changed = false;
-    if input.just_pressed(KeyCode::KeyT) {
-        // change tool
-        dwarf.tool = match dwarf.tool {
+    if input.just_pressed(KeyCode::KeyC) {
+        let next_color = match dwarf.color {
+            DwarfColor::Blue => DwarfColor::Purple,
+            DwarfColor::Purple => DwarfColor::Red,
+            DwarfColor::Red => DwarfColor::Yellow,
+            DwarfColor::Yellow => DwarfColor::Blue,
+        };
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::ChangeColor(next_color));
+    } else if input.just_pressed(KeyCode::KeyT) {
+        let next_tool = match dwarf.tool {
             DwarfTool::BareHands => DwarfTool::Shovel,
             DwarfTool::Shovel => DwarfTool::Dynamite,
             DwarfTool::Dynamite => DwarfTool::MultiTool,
             DwarfTool::MultiTool => DwarfTool::Pickaxe,
             DwarfTool::Pickaxe => DwarfTool::BareHands,
         };
-        tool_changed = true;
-    }
-    if input.pressed(KeyCode::KeyW) {
-        // if not going Direction::Up, go that way
-        if dwarf.direction != DwarfDirection::Up {
-            dwarf.direction = DwarfDirection::Up;
-            direction_changed = true;
-        }
-
-        // if not Moving change to Moving
-        if dwarf.action != DwarfAction::Moving {
-            body_action_changed = true;
-        }
-    }
-    if input.pressed(KeyCode::KeyA) {
-        // if not going Direction::Up, go that way
-        if dwarf.direction != DwarfDirection::Left {
-            dwarf.direction = DwarfDirection::Left;
-            direction_changed = true;
-        }
-
-        // if not Moving change to Moving
-        if dwarf.action != DwarfAction::Moving {
-            body_action_changed = true;
-        }
-    }
-    if input.pressed(KeyCode::KeyS) {
-        // if not going Direction::Up, go that way
-        if dwarf.direction != DwarfDirection::Down {
-            dwarf.direction = DwarfDirection::Down;
-            direction_changed = true;
-        }
-
-        // if not Moving change to Moving
-        if dwarf.action != DwarfAction::Moving {
-            body_action_changed = true;
-        }
-    }
-    if input.pressed(KeyCode::KeyD) {
-        // if not going Direction::Up, go that way
-        if dwarf.direction != DwarfDirection::Right {
-            dwarf.direction = DwarfDirection::Right;
-            direction_changed = true;
-        }
-
-        // if not Moving change to Moving
-        if dwarf.action != DwarfAction::Moving {
-            body_action_changed = true;
-        }
-    }
-    if direction_changed || body_action_changed {
-        update_dwarf_body_animation(
-            &mut commands,
-            &mut dwarf,
-            &handles,
-        );
-    }
-    if direction_changed || tool_changed {
-        update_dwarf_parts_animation(
-            &mut commands,
-            &mut dwarf,
-            &handles,
-        );
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::ChangeTool(next_tool));
+    } else if input.pressed(KeyCode::KeyW) {
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::ChangeDirection(DwarfDirection::Up));
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::MoveForward);
+    } else if input.pressed(KeyCode::KeyA) {
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::ChangeDirection(DwarfDirection::Left));
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::MoveForward);
+    } else if input.pressed(KeyCode::KeyS) {
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::ChangeDirection(DwarfDirection::Down));
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::MoveForward);
+    } else if input.pressed(KeyCode::KeyD) {
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::ChangeDirection(DwarfDirection::Right));
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::MoveForward);
+    } else if input.just_pressed(KeyCode::KeyX) {
+        // TODO: handle other actions, like Shoveling
+        let next_action = DwarfAction::Idle;
+        actions_requested
+            .0
+            .push_back(DwarfActionRequest::TakeAction(next_action));
     }
 }
