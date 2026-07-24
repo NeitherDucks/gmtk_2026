@@ -76,6 +76,7 @@ fn main() -> AppExit {
             menus::MenuPlugin,
             gamemodes::GameModesPlugin,
         ))
+        .add_systems(Startup, setup)
         .add_systems(OnExit(GameState::LoadingAssets), post_load_setup);
 
     #[cfg(feature = "dev")]
@@ -85,6 +86,19 @@ fn main() -> AppExit {
     );
 
     app.run()
+}
+
+/// Anything that need to be created on startup
+fn setup(mut commands: Commands) {
+    // We need a camera
+    commands.spawn((
+        Camera2d,
+        Projection::Orthographic(OrthographicProjection {
+            scale: 0.5,
+            ..OrthographicProjection::default_2d()
+        }),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    ));
 }
 
 /// Anything that needs to be done after loading, so stuff that would rely on handles for example.

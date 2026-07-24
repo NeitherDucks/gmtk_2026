@@ -16,16 +16,6 @@ pub struct DwarfCharacter {
 }
 
 pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
-    // We need a camera
-    commands.spawn((
-        Camera2d,
-        Projection::Orthographic(OrthographicProjection {
-            scale: 0.5,
-            ..OrthographicProjection::default_2d()
-        }),
-        Transform::from_xyz(128.0, 128.0, 0.0),
-    ));
-
     // We spawn our selected level
     commands.spawn(LdtkWorldBundle {
         ldtk_handle: handles.test_level.clone(),
@@ -54,25 +44,36 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
     let tool = DwarfTool::Shovel;
     let resource = DwarfResource::Gold;
 
-    let dwarf_body_entity = commands.spawn((
-        Name::new("TestDwarfBody"),
-        Sprite::default(),
-        Transform::from_translation(Vec3::new(tx, ty, BODY_Z)),
-        AseAnimation {
-            animation: Animation::default(),
-            aseprite: clone_dwarf_body_animation(body_color, body_action, handles),
-        },
-    )).id();
-    let dwarf_parts_entity = commands.spawn((
-        Name::new("TestDwarfParts"),
-        Sprite::default(),
-        Transform::from_translation(Vec3::new(tx, ty, PARTS_Z)),
-        AseAnimation {
-            animation: Animation::default(),
-            aseprite: clone_dwarf_parts_animation(body_action, tool, resource, handles),
-        },
-    )).id();
-    commands.insert_resource(DwarfCharacter { action: body_action, color: body_color, resource, tool, body: dwarf_body_entity, parts: dwarf_parts_entity});
+    let dwarf_body_entity = commands
+        .spawn((
+            Name::new("TestDwarfBody"),
+            Sprite::default(),
+            Transform::from_translation(Vec3::new(tx, ty, BODY_Z)),
+            AseAnimation {
+                animation: Animation::default(),
+                aseprite: clone_dwarf_body_animation(body_color, body_action, handles),
+            },
+        ))
+        .id();
+    let dwarf_parts_entity = commands
+        .spawn((
+            Name::new("TestDwarfParts"),
+            Sprite::default(),
+            Transform::from_translation(Vec3::new(tx, ty, PARTS_Z)),
+            AseAnimation {
+                animation: Animation::default(),
+                aseprite: clone_dwarf_parts_animation(body_action, tool, resource, handles),
+            },
+        ))
+        .id();
+    commands.insert_resource(DwarfCharacter {
+        action: body_action,
+        color: body_color,
+        resource,
+        tool,
+        body: dwarf_body_entity,
+        parts: dwarf_parts_entity,
+    });
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -267,7 +268,12 @@ pub fn setup_ui() {}
 
 pub fn cleanup_ui() {}
 
-pub fn dev_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>, mut dwarf: If<ResMut<DwarfCharacter>>, handles: Res<AssetHandles>) {
+pub fn dev_input(
+    mut commands: Commands,
+    input: Res<ButtonInput<KeyCode>>,
+    mut dwarf: If<ResMut<DwarfCharacter>>,
+    handles: Res<AssetHandles>,
+) {
     let mut body_action_changed = false;
     let mut tool_changed = false;
     if input.pressed(KeyCode::KeyT) {
@@ -298,7 +304,16 @@ pub fn dev_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>, mut d
         body_action_changed = true;
     }
     if tool_changed {
-        dwarf.parts = commands.spawn(AseAnimation { animation: default(), aseprite: clone_dwarf_parts_animation(dwarf.action, dwarf.tool, dwarf.resource, &handles)}).id();
+        dwarf.parts = commands
+            .spawn(AseAnimation {
+                animation: default(),
+                aseprite: clone_dwarf_parts_animation(
+                    dwarf.action,
+                    dwarf.tool,
+                    dwarf.resource,
+                    &handles,
+                ),
+            })
+            .id();
     }
 }
-

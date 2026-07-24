@@ -53,6 +53,8 @@ macro_rules! asset_handles {
 }
 
 asset_handles! {
+    ui: Handle<Image> = "ui/UI_Tileset.png",
+    title: Handle<Image> = "ui/countvandwarfus.png",
     test_level: LdtkProjectHandle = "test.ldtk",
 
 //    dwarf_body_idle[DwarfColor::Blue]: Handle<Aseprite> = "dwarves/body/Blue/Idle.aseprite",
