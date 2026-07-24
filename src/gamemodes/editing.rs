@@ -103,8 +103,8 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
     let tx = x * TILE_SIZE + TILE_SIZE / 2.;
     let ty = y * TILE_SIZE - TILE_SIZE / 2.;
 
-    const BODY_Z: f32 = 2.0_f32;
-    const PARTS_Z: f32 = 3.0_f32;
+    const BODY_Z: f32 = 10.0_f32;
+    const PARTS_Z: f32 = 11.0_f32;
 
     let body_color = DwarfColor::Blue;
     let body_action = DwarfAction::Idle;
@@ -367,9 +367,6 @@ fn apply_movement(
     transform: &mut Transform,
     apply_movement_fn: impl FnOnce(&mut Transform, f32),
 ) -> (bool, bool) {
-    const DWARF_MOVE_SPEED: f32 = 50.0;
-    const TILE_SIZE: f32 = 16.0;
-
     let mut direction_changed = false;
     let mut action_changed = false;
 
@@ -386,6 +383,11 @@ fn apply_movement(
     if dwarf.action == DwarfAction::Moving && dwarf.direction == target_direction {
         let distance_this_frame = DWARF_MOVE_SPEED * dt;
         dwarf.move_distance += distance_this_frame;
+        if dwarf.direction == DwarfDirection::Left {
+            transform.scale.x = -1.;
+        } else {
+            transform.scale.x = 1.;
+        }
 
         if dwarf.move_distance >= TILE_SIZE {
             // Finish Moving exactly one tile's distance
