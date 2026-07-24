@@ -152,18 +152,59 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
 }
 
 fn clone_dwarf_body_animation(dwarf: &DwarfCharacter, handles: &AssetHandles) -> Handle<Aseprite> {
-    match dwarf.action {
-        DwarfAction::Idle => handles.dwarf_body_blue_idle.clone(),
-        DwarfAction::Moving => handles.dwarf_body_blue_moving.clone(),
-        DwarfAction::Jump => handles.dwarf_body_blue_jump.clone(),
-        DwarfAction::LightLanding => handles.dwarf_body_blue_lightlanding.clone(),
-        DwarfAction::HeavyLanding => handles.dwarf_body_blue_heavylanding.clone(),
-        DwarfAction::StandUp => handles.dwarf_body_blue_standup.clone(),
-        DwarfAction::Climbing => handles.dwarf_body_blue_climbing.clone(),
-        DwarfAction::Shoveling => handles.dwarf_body_blue_shoveling.clone(),
-        DwarfAction::Light => handles.dwarf_body_blue_light.clone(),
-        DwarfAction::Throw => handles.dwarf_body_blue_throw.clone(),
-        DwarfAction::Swing => handles.dwarf_body_blue_swing.clone(),
+    match dwarf.color {
+        DwarfColor::Blue => match dwarf.action {
+            DwarfAction::Idle => handles.dwarf_body_blue_idle.clone(),
+            DwarfAction::Moving => handles.dwarf_body_blue_moving.clone(),
+            DwarfAction::Jump => handles.dwarf_body_blue_jump.clone(),
+            DwarfAction::LightLanding => handles.dwarf_body_blue_lightlanding.clone(),
+            DwarfAction::HeavyLanding => handles.dwarf_body_blue_heavylanding.clone(),
+            DwarfAction::StandUp => handles.dwarf_body_blue_standup.clone(),
+            DwarfAction::Climbing => handles.dwarf_body_blue_climbing.clone(),
+            DwarfAction::Shoveling => handles.dwarf_body_blue_shoveling.clone(),
+            DwarfAction::Light => handles.dwarf_body_blue_light.clone(),
+            DwarfAction::Throw => handles.dwarf_body_blue_throw.clone(),
+            DwarfAction::Swing => handles.dwarf_body_blue_swing.clone(),
+        },
+        DwarfColor::Red => match dwarf.action {
+            DwarfAction::Idle => handles.dwarf_body_red_idle.clone(),
+            DwarfAction::Moving => handles.dwarf_body_red_moving.clone(),
+            DwarfAction::Jump => handles.dwarf_body_red_jump.clone(),
+            DwarfAction::LightLanding => handles.dwarf_body_red_lightlanding.clone(),
+            DwarfAction::HeavyLanding => handles.dwarf_body_red_heavylanding.clone(),
+            DwarfAction::StandUp => handles.dwarf_body_red_standup.clone(),
+            DwarfAction::Climbing => handles.dwarf_body_red_climbing.clone(),
+            DwarfAction::Shoveling => handles.dwarf_body_red_shoveling.clone(),
+            DwarfAction::Light => handles.dwarf_body_red_light.clone(),
+            DwarfAction::Throw => handles.dwarf_body_red_throw.clone(),
+            DwarfAction::Swing => handles.dwarf_body_red_swing.clone(),
+        },
+        DwarfColor::Yellow => match dwarf.action {
+            DwarfAction::Idle => handles.dwarf_body_yellow_idle.clone(),
+            DwarfAction::Moving => handles.dwarf_body_yellow_moving.clone(),
+            DwarfAction::Jump => handles.dwarf_body_yellow_jump.clone(),
+            DwarfAction::LightLanding => handles.dwarf_body_yellow_lightlanding.clone(),
+            DwarfAction::HeavyLanding => handles.dwarf_body_yellow_heavylanding.clone(),
+            DwarfAction::StandUp => handles.dwarf_body_yellow_standup.clone(),
+            DwarfAction::Climbing => handles.dwarf_body_yellow_climbing.clone(),
+            DwarfAction::Shoveling => handles.dwarf_body_yellow_shoveling.clone(),
+            DwarfAction::Light => handles.dwarf_body_yellow_light.clone(),
+            DwarfAction::Throw => handles.dwarf_body_yellow_throw.clone(),
+            DwarfAction::Swing => handles.dwarf_body_yellow_swing.clone(),
+        },
+        DwarfColor::Purple => match dwarf.action {
+            DwarfAction::Idle => handles.dwarf_body_purple_idle.clone(),
+            DwarfAction::Moving => handles.dwarf_body_purple_moving.clone(),
+            DwarfAction::Jump => handles.dwarf_body_purple_jump.clone(),
+            DwarfAction::LightLanding => handles.dwarf_body_purple_lightlanding.clone(),
+            DwarfAction::HeavyLanding => handles.dwarf_body_purple_heavylanding.clone(),
+            DwarfAction::StandUp => handles.dwarf_body_purple_standup.clone(),
+            DwarfAction::Climbing => handles.dwarf_body_purple_climbing.clone(),
+            DwarfAction::Shoveling => handles.dwarf_body_purple_shoveling.clone(),
+            DwarfAction::Light => handles.dwarf_body_purple_light.clone(),
+            DwarfAction::Throw => handles.dwarf_body_purple_throw.clone(),
+            DwarfAction::Swing => handles.dwarf_body_purple_swing.clone(),
+        },
     }
 }
 
@@ -300,11 +341,7 @@ fn update_dwarf_body_animation(
     dwarf: &DwarfCharacter,
     handles: &AssetHandles,
 ) {
-    // force Blue until have more dwarves
-    let mut temp_dwarf = dwarf.clone();
-    temp_dwarf.color = DwarfColor::Blue;
-
-    let new_aseprite = clone_dwarf_body_animation(&temp_dwarf, handles);
+    let new_aseprite = clone_dwarf_body_animation(dwarf, handles);
     commands.entity(dwarf.body).insert(AseAnimation {
         animation: Animation::default(),
         aseprite: new_aseprite,
@@ -382,6 +419,7 @@ pub fn process_action_request(
         let mut direction_changed = false;
         let mut body_action_changed = false;
         let mut tool_changed = false;
+        let mut color_changed = false;
         let mut moved = false;
 
         match request {
@@ -430,12 +468,12 @@ pub fn process_action_request(
             DwarfActionRequest::ChangeColor(new_color) => {
                 if dwarf.color != new_color {
                     dwarf.color = new_color;
-                    body_action_changed = true;
+                    color_changed = true;
                 }
             }
         }
 
-        if direction_changed || body_action_changed {
+        if direction_changed || body_action_changed || color_changed {
             update_dwarf_body_animation(&mut commands, &dwarf, &handles);
         }
         if direction_changed || tool_changed {
