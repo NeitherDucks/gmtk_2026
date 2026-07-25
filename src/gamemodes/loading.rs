@@ -1,6 +1,10 @@
+#![allow(unused)]
+
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 use bevy_ecs_ldtk::prelude::*;
+use bevy_ecs_ldtk::ldtk::loaded_level::*;
+use std::collections::HashSet;
 
 use crate::{
     LevelState,
@@ -22,6 +26,7 @@ impl Plugin for LoadingGameModePlugin {
             .add_systems(
                 Update,
                 (
+                    //process_map_extras,
                     cache_wall_locations,
                     cache_chest_locations,
                     center_camera_to_level,
@@ -105,34 +110,25 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
     commands.insert_resource(dwarf);
 }
 
-/*
-use bevy_ecs_ldtk::ldtk::loaded_level::*;
+// I'm not sure of the differences between how to register/spawn-bundle-from tiles or placed entities, but for
+// entities one would use the LdtkEntity registration on a bundle,
+// e.g., Bundle (InteractibleEntity, ExactEntityName("Chest"), Chest(contents=RedPotion LdtkEntity), Lock(unlock_entity=SilverKey LdtkEntity))
+// as in the field_instances example.
 
-enum SpecialTile {
-    None = 0,
-    Wall = 1,
-    BlueStart = 2,
-    RedStart = 3,
-    YellowStart = 4,
-    PurpleStart = 5,
-}
+// Components:
+// InteractibleEntity -- indicates something a dwarf would interact with
+// ExactEntityName(namehash=hash("Silver Key")) -- or some way to get the entity's "type"
+// Tool(type: DwarfTool) -- marks that the interactible entity is a type of tool
+// DirectionChanger(dir: DwarfDirection) -- marks that the interactible entity is a direction-changer arrow
+// Chest(contents: Option<EntityID>) -- marks that the interactible entity is a chest (with possible contents of an entity)
+// Lock(unlock_entity: e.g., SILVER_KEY) -- marks that the Chest/Door is secured by a certain unlock_entity
 
-impl TryFrom<i32> for SpecialTile {
-    type Error = ();
+// Other:
+// register (invisible) Wall entities; cache them like before
+// registered DwarfStart LdtkEntity (marker component) bundle, with DwarfColor, DwarfDirection, and DwarfTool components
+// registered Door LdtkEntity which may also have a Lock component on it
 
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(SpecialTile::None),
-            1 => Ok(SpecialTile::Wall),
-            2 => Ok(SpecialTile::BlueStart),
-            3 => Ok(SpecialTile::RedStart),
-            4 => Ok(SpecialTile::YellowStart),
-            5 => Ok(SpecialTile::PurpleStart),
-            _ => Err(()),
-        }
-    }
-}
-*/
+
 
 pub fn cache_wall_locations(
     mut level_walls: ResMut<LevelWalls>,
@@ -166,10 +162,10 @@ pub fn cache_wall_locations(
 }
 
 /*
-pub fn cache_wall_locations(
+pub fn process_map_extras(
     mut level_walls: ResMut<LevelWalls>,
     mut level_messages: MessageReader<LevelEvent>,
-    walls: Query<&GridCoords, With<Wall>>,
+    walls: Query<&GridCoords, With<WallTag>>,
     ldtk_project_entities: Query<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
 ) -> Result {
@@ -188,24 +184,8 @@ pub fn cache_wall_locations(
                 .unwrap();
             println!("{:?}", logic_layer);
 
-            let mut wall_locations: HashSet<GridCoords> = HashSet::new(); // = walls.iter().copied().collect();
-            let mut dwarf_locations: Vec<(GridCoords, DwarfColor)> = Vec::new();
-
-            for r in 0..logic_layer.c_hei {
-                for c in 0..logic_layer.c_wid {
-                    let coords = GridCoords {y: r, x: c};
-                    let t = SpecialTile::try_from(logic_layer.int_grid_csv[(r * logic_layer.c_wid + c) as usize])
-                        .expect("Value outside SpecialTile range");
-                    match t {
-                        SpecialTile::None => {},
-                        SpecialTile::Wall => { wall_locations.insert(coords); },
-                        SpecialTile::BlueStart => { dwarf_locations.push((coords, DwarfColor::Blue)); },
-                        SpecialTile::RedStart => { dwarf_locations.push((coords, DwarfColor::Red)); },
-                        SpecialTile::YellowStart => { dwarf_locations.push((coords, DwarfColor::Yellow)); },
-                        SpecialTile::PurpleStart => { dwarf_locations.push((coords, DwarfColor::Purple)); },
-                    }
-                }
-            }
+            let mut wall_locations: HashSet<GridCoords> = HashSet::new();
+            let mut dwarf_locations: Vec<(GridCoords, DwarfColor, DwarfDirection)> = Vec::new();
 
             //println!("walls: {:?}", wall_locations);
             //println!("starts: {:?}", dwarf_locations);
