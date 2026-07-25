@@ -5,6 +5,7 @@ use crate::GameState;
 mod editing;
 mod playing;
 
+pub use editing::Traps;
 pub struct GameModesPlugin;
 
 impl Plugin for GameModesPlugin {

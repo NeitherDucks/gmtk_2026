@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::asset_loading::AssetHandles;
+use crate::{asset_loading::AssetHandles, menus::widgets::item_button};
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
@@ -8,7 +8,6 @@ use std::collections::{HashSet, VecDeque};
 
 const DWARF_MOVE_SPEED: f32 = 50.0;
 const TILE_SIZE: i32 = 16;
-
 
 #[derive(Default, Component)]
 pub struct Goal;
@@ -129,6 +128,19 @@ pub struct DwarfCharacter {
     body: Entity,
     parts: Entity,
     move_distance: f32, // distance moved in current Moving action
+}
+
+#[derive(Component, Default, Clone)]
+pub struct EditingLevelTag;
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum Traps {
+    Up,
+    Left,
+    Down,
+    Right,
+    Catapult,
+    Rocks,
 }
 
 pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
@@ -385,9 +397,38 @@ fn clone_dwarf_parts_animation(dwarf: &DwarfCharacter, handles: &AssetHandles) -
 
 pub fn cleanup() {}
 
-pub fn setup_ui() {}
+pub fn setup_ui(mut commands: Commands) {
+    commands.queue_spawn_scene(bsn! {
+        EditingLevelTag
+        Node {
+            width: percent(100),
+            height: percent(100),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+        }
+        Children [
+            Node {
+                width: percent(100),
+                height: percent(95),
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::End,
+                justify_content: JustifyContent::Center,
+            }
+            Children [
+                item_button(Traps::Up, 2),
+                item_button(Traps::Down, 3),
+                item_button(Traps::Left, 1),
+                item_button(Traps::Right, 5),
+                item_button(Traps::Catapult, 1),
+                item_button(Traps::Rocks, 0),
+            ]
+        ]
+    });
+}
 
-pub fn cleanup_ui() {}
+pub fn cleanup_ui(mut commands: Commands, entity: Single<Entity, With<EditingLevelTag>>) {
+    commands.entity(*entity).despawn();
+}
 
 fn update_dwarf_body_animation(
     commands: &mut Commands,
@@ -690,10 +731,7 @@ pub fn cache_chest_locations(
     Ok(())
 }
 
-pub fn check_goal(
-    dwarf: Res<DwarfCharacter>,
-    goals: Query<&GridCoords, With<Goal>>,
-) {
+pub fn check_goal(dwarf: Res<DwarfCharacter>, goals: Query<&GridCoords, With<Goal>>) {
     if goals
         .iter()
         .any(|(goal_grid_coords)| &dwarf.grid_coords == goal_grid_coords)

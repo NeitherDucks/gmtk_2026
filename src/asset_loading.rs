@@ -55,6 +55,8 @@ macro_rules! asset_handles {
 asset_handles! {
     ui: Handle<Image> = "ui/UI_Tileset.png",
     title: Handle<Image> = "ui/countvandwarfus.png",
+    font: Handle<Font> = "ui/Scriptorium.ttf",
+    icons: Handle<Image> = "ui/icons.png",
     test_level: LdtkProjectHandle = "test.ldtk",
 
     dwarf_body_blue_idle: Handle<Aseprite> = "dwarves/body/Blue/Idle.aseprite",
