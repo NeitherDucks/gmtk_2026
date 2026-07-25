@@ -15,7 +15,14 @@ impl Plugin for GameModesPlugin {
         )
         .add_systems(
             Update,
-            (editing::dev_input, editing::process_action_request),
+            (
+                editing::cache_wall_locations,
+                editing::cache_chest_locations,
+                editing::check_goal,
+                editing::translate_grid_coords_entities,
+                (editing::dev_input, editing::process_action_request).chain(),
+            )
+                .run_if(in_state(GameState::EditLevel)),
         )
         .add_systems(
             OnTransition {

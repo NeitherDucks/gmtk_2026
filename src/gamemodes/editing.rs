@@ -3,11 +3,61 @@
 use crate::asset_loading::AssetHandles;
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
-use bevy_ecs_ldtk::{LdtkWorldBundle, LevelSelection};
-use std::collections::VecDeque;
+use bevy_ecs_ldtk::prelude::*;
+use std::collections::{HashSet, VecDeque};
 
 const DWARF_MOVE_SPEED: f32 = 50.0;
-const TILE_SIZE: f32 = 16.0;
+const TILE_SIZE: i32 = 16;
+
+
+#[derive(Default, Component)]
+pub struct Goal;
+
+#[derive(Default, Component)]
+pub struct Wall;
+
+#[derive(Default, Bundle, LdtkIntCell)]
+struct WallBundle {
+    wall: Wall,
+}
+
+#[derive(Default, Resource, Debug)]
+pub struct LevelWalls {
+    wall_locations: HashSet<GridCoords>,
+    level_width: i32,
+    level_height: i32,
+}
+
+impl LevelWalls {
+    fn in_wall(&self, grid_coords: &GridCoords) -> bool {
+        grid_coords.x < 0
+            || grid_coords.y < 0
+            || grid_coords.x >= self.level_width
+            || grid_coords.y >= self.level_height
+            || self.wall_locations.contains(grid_coords)
+    }
+}
+
+#[derive(Default, Component)]
+pub struct Chest;
+
+#[derive(Default, Bundle, LdtkIntCell)]
+struct ChestBundle {
+    chest: Chest,
+}
+
+#[derive(Default, Resource, Debug)]
+pub struct LevelChests {
+    chest_locations: HashSet<GridCoords>,
+    level_width: i32,
+    level_height: i32,
+}
+
+impl LevelChests {
+    fn at_item(&self, grid_coords: &GridCoords) -> bool {
+        self.chest_locations.contains(grid_coords)
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum DwarfDirection {
@@ -70,6 +120,7 @@ pub struct ActionsRequested(pub VecDeque<DwarfActionRequest>);
 
 #[derive(Resource, Clone)]
 pub struct DwarfCharacter {
+    grid_coords: GridCoords,
     color: DwarfColor,
     action: DwarfAction,
     direction: DwarfDirection,
@@ -90,18 +141,19 @@ pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     // This is what selects the level inside the ldtk file.
     commands.insert_resource(LevelSelection::index(0));
 
+    commands.init_resource::<LevelWalls>();
+    commands.init_resource::<LevelChests>();
     commands.init_resource::<ActionsRequested>();
 
     spawn_initial_dwarf(commands.reborrow(), &handles);
 }
 
 fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
-    let x = 1.0;
-    let y = 5.0;
+    let grid_coords: GridCoords = GridCoords { x: 1, y: 5 };
 
     // these formulas aren't correct yet plus they should be (and probably are) in a world_to_screen-type function
-    let tx = x * TILE_SIZE + TILE_SIZE / 2.;
-    let ty = y * TILE_SIZE - TILE_SIZE / 2.;
+    let tx = grid_coords.x * TILE_SIZE + TILE_SIZE / 2;
+    let ty = grid_coords.y * TILE_SIZE - TILE_SIZE / 2;
 
     const BODY_Z: f32 = 10.0_f32;
     const PARTS_Z: f32 = 11.0_f32;
@@ -116,18 +168,19 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
         .spawn((
             Name::new("Body"),
             Sprite::default(),
-            Transform::from_translation(Vec3::new(tx, ty, BODY_Z)),
+            Transform::from_translation(Vec3::new(tx as f32, ty as f32, BODY_Z)),
         ))
         .id();
     let dwarf_parts_entity = commands
         .spawn((
             Name::new("Parts"),
             Sprite::default(),
-            Transform::from_translation(Vec3::new(tx, ty, PARTS_Z)),
+            Transform::from_translation(Vec3::new(tx as f32, ty as f32, PARTS_Z)),
         ))
         .id();
 
     let dwarf = DwarfCharacter {
+        grid_coords,
         action: body_action,
         direction,
         color: body_color,
@@ -365,13 +418,30 @@ fn apply_movement(
     target_direction: DwarfDirection,
     dt: f32,
     transform: &mut Transform,
+    level_walls: &LevelWalls,
     apply_movement_fn: impl FnOnce(&mut Transform, f32),
 ) -> (bool, bool) {
     let mut direction_changed = false;
     let mut action_changed = false;
+    let mut able_to_move_forward = false;
+
+    let grid_movement_direction = match target_direction {
+        DwarfDirection::Up => GridCoords::new(0, 1),
+        DwarfDirection::Down => GridCoords::new(0, -1),
+        DwarfDirection::Left => GridCoords::new(-1, 0),
+        DwarfDirection::Right => GridCoords::new(1, 0),
+    };
+
+    // can we move forward?
+    let destination = dwarf.grid_coords + grid_movement_direction;
+    println!(
+        "now at {:?}. move {:?} to {:?}",
+        dwarf.grid_coords, grid_movement_direction, destination
+    );
+    able_to_move_forward = !level_walls.in_wall(&destination);
 
     // Start moving if Idle
-    if dwarf.action == DwarfAction::Idle {
+    if dwarf.action == DwarfAction::Idle && able_to_move_forward {
         dwarf.action = DwarfAction::Moving;
         dwarf.direction = target_direction;
         dwarf.move_distance = 0.0;
@@ -389,14 +459,15 @@ fn apply_movement(
             transform.scale.x = 1.;
         }
 
-        if dwarf.move_distance >= TILE_SIZE {
+        if dwarf.move_distance >= TILE_SIZE as f32 {
             // Finish Moving exactly one tile's distance
             apply_movement_fn(
                 transform,
-                TILE_SIZE - (dwarf.move_distance - distance_this_frame),
+                TILE_SIZE as f32 - (dwarf.move_distance - distance_this_frame),
             );
             dwarf.action = DwarfAction::Idle;
             dwarf.move_distance = 0.0;
+            dwarf.grid_coords = destination;
             action_changed = true;
         } else {
             apply_movement_fn(transform, distance_this_frame);
@@ -413,6 +484,7 @@ pub fn process_action_request(
     handles: Res<AssetHandles>,
     time: Res<Time>,
     mut query: Query<&mut Transform>,
+    level_walls: Res<LevelWalls>,
 ) {
     let dt = time.delta_secs();
 
@@ -433,6 +505,7 @@ pub fn process_action_request(
                         current_direction,
                         dt,
                         &mut transform,
+                        &level_walls,
                         |t, dist| match current_direction {
                             DwarfDirection::Up => t.translation.y += dist,
                             DwarfDirection::Down => t.translation.y -= dist,
@@ -552,5 +625,90 @@ pub fn dev_input(
         actions_requested
             .0
             .push_back(DwarfActionRequest::TakeAction(next_action));
+    }
+}
+
+pub fn cache_wall_locations(
+    mut level_walls: ResMut<LevelWalls>,
+    mut level_messages: MessageReader<LevelEvent>,
+    walls: Query<&GridCoords, With<Wall>>,
+    ldtk_project_entities: Query<&LdtkProjectHandle>,
+    ldtk_project_assets: Res<Assets<LdtkProject>>,
+) -> Result {
+    for level_event in level_messages.read() {
+        if let LevelEvent::Spawned(level_iid) = level_event {
+            let ldtk_project = ldtk_project_assets
+                .get(ldtk_project_entities.single()?)
+                .expect("LdtkProject should be loaded when level is spawned");
+            let level = ldtk_project
+                .get_raw_level_by_iid(level_iid.get())
+                .expect("spawned level should exist in project");
+
+            let wall_locations = walls.iter().copied().collect();
+
+            let new_level_walls = LevelWalls {
+                wall_locations,
+                level_width: level.px_wid / TILE_SIZE,
+                level_height: level.px_hei / TILE_SIZE,
+            };
+            println!("{:?}", new_level_walls);
+
+            *level_walls = new_level_walls;
+        }
+    }
+    Ok(())
+}
+
+pub fn cache_chest_locations(
+    mut level_chests: ResMut<LevelChests>,
+    mut level_messages: MessageReader<LevelEvent>,
+    chests: Query<&GridCoords, With<Chest>>,
+    ldtk_project_entities: Query<&LdtkProjectHandle>,
+    ldtk_project_assets: Res<Assets<LdtkProject>>,
+) -> Result {
+    for level_event in level_messages.read() {
+        if let LevelEvent::Spawned(level_iid) = level_event {
+            let ldtk_project = ldtk_project_assets
+                .get(ldtk_project_entities.single()?)
+                .expect("LdtkProject should be loaded when level is spawned");
+            let level = ldtk_project
+                .get_raw_level_by_iid(level_iid.get())
+                .expect("spawned level should exist in project");
+
+            let chest_locations = chests.iter().copied().collect();
+
+            let new_level_chests = LevelChests {
+                chest_locations,
+                level_width: level.px_wid / TILE_SIZE,
+                level_height: level.px_hei / TILE_SIZE,
+            };
+            println!("{:?}", new_level_chests);
+
+            *level_chests = new_level_chests;
+        }
+    }
+    Ok(())
+}
+
+pub fn check_goal(
+    dwarf: Res<DwarfCharacter>,
+    goals: Query<&GridCoords, With<Goal>>,
+) {
+    if goals
+        .iter()
+        .any(|(goal_grid_coords)| &dwarf.grid_coords == goal_grid_coords)
+    {
+        println!("found goal at dwarf.grid_coords {:?}", dwarf.grid_coords);
+    }
+}
+
+pub fn translate_grid_coords_entities(
+    mut grid_coords_entities: Query<(Entity, &mut Transform, &GridCoords), Changed<GridCoords>>,
+) {
+    for (e, mut transform, grid_coords) in grid_coords_entities.iter_mut() {
+        transform.translation =
+            bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(TILE_SIZE))
+                .extend(transform.translation.z);
+        println!("entity {:?} at {:?}", e, grid_coords);
     }
 }
