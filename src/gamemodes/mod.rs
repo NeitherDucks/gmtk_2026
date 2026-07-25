@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::{
-    GridCoords, LdtkEntity, LdtkIntCell,
-    app::{LdtkEntityAppExt, LdtkIntCellAppExt},
+    GridCoords, IntGridRendering, LdtkEntity, LdtkIntCell, LdtkSettings, SetClearColor,
+    app::LdtkEntityAppExt,
 };
 use bevy_ecs_tilemap::tiles::TileVisible;
 
@@ -16,7 +16,12 @@ pub struct GameModesPlugin;
 impl Plugin for GameModesPlugin {
     fn build(&self, app: &mut App) {
         app.register_ldtk_entity::<Chest>("Chest")
-            .register_default_ldtk_int_cell::<HideIntCell>()
+            // .register_default_ldtk_int_cell::<HideIntCell>()
+            .insert_resource(LdtkSettings {
+                int_grid_rendering: IntGridRendering::Invisible,
+                set_clear_color: SetClearColor::FromLevelBackground,
+                ..Default::default()
+            })
             .add_systems(
                 OnEnter(GameState::EditLevel),
                 (editing::setup, editing::setup_ui),
@@ -24,11 +29,17 @@ impl Plugin for GameModesPlugin {
             .add_systems(
                 Update,
                 (
+                    editing::center_camera_to_level,
+                    editing::get_hand,
                     editing::cache_wall_locations,
                     editing::cache_chest_locations,
                     editing::check_goal,
                     editing::translate_grid_coords_entities,
                     (editing::dev_input, editing::process_action_request).chain(),
+                    editing::update_hand_ui.run_if(
+                        resource_exists::<editing::Hand>
+                            .and_then(resource_changed::<editing::Hand>),
+                    ),
                 )
                     .run_if(in_state(GameState::EditLevel)),
             )

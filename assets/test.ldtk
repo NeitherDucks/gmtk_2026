@@ -11,7 +11,7 @@
 	"iid": "969ef850-6fc0-11f1-a753-ad1a3d75ab37",
 	"jsonVersion": "1.5.3",
 	"appBuildId": 473703,
-	"nextUid": 11,
+	"nextUid": 18,
 	"identifierStyle": "Capitalize",
 	"toc": [],
 	"worldLayout": "Free",
@@ -287,16 +287,123 @@
 				"opaqueTiles": "1111111111111111111111111111111111110000111111000011111100001111000001111100001100000000000000000000",
 				"averageColors": "f433f534f534f534f534f433f423f423f423f423f433f323f323f323f323f433f423f423f423f423f433f323f423f423f323f433f423f423f423f423f433f323f323f323f323f433f755f755f666d644f322f433f433f433f433f3225644564456448433f534f433f433f534f534f5345644564456444433f323f323f323f32367762775e755e7653654f644f423f423f423f4238975267736674765f211f4236643676787778643977757674b96389a367749884855385427554776367747663677489a39883975"
 			}
+		},
+		{
+			"__cWid": 16,
+			"__cHei": 28,
+			"identifier": "UIIcons",
+			"uid": 14,
+			"relPath": "ui/icons.png",
+			"embedAtlas": null,
+			"pxWid": 512,
+			"pxHei": 867,
+			"tileGridSize": 32,
+			"spacing": 0,
+			"padding": 0,
+			"tags": [],
+			"tagsSourceEnumUid": null,
+			"enumTags": [],
+			"customData": [],
+			"savedSelections": [],
+			"cachedPixelData": {
+				"opaqueTiles": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111111",
+				"averageColors": "5bbb67c421126ddd3aaa1fc54d6826664b826c9836bc000045454555000000005b4558335c666d685c980000000000000000000000000000000000000000000057c45c3366a46a3346a44a33537c000055555555555555550000000000000000686769b858764aaa588869a97ca85788538c49626aaa6a3359b5676788687cc66ddd599959535a854555554457555999573500000000000000000000000000002754398837882667298828873877365636775888587857784445486554235da87766797779893766576646443a8558444456473345634753000000000000000035766799553366786778777955335566747c759564337a654cbb55bd6737576345334556663366454b8349873b835844486666330000000000000000000000004a67478b48a74b965a76568a58a65b965b87599a5ab75ca75a665a765a786ccc8633555635443555355637664666486548ab586539434b9753576854466769887b65699966675b854633549d2b756a844a733633456879636bbc55838c52638358446967563348535863676356336c94794376787a7488534b974b97579b5833847b8a4587b58c94864589658755864579995da95b987dcb7a656aab6ccc47856b443c824ad57dc6597456464a636bc55dcb7a4465363a546c867a654b756c763b765daa4b7648664a657da96eba7b834abc48636ccc66234c6869656cbc00003655376639465678595465565c945a656aaa5a3456544aaa55448789876400004744878968785ca4599a6ccc6b677db566334aab499a000000000000000000007b77769c78b77da67a7a7767000000000000000000000000000000000000000029882888287738886a66667b67a66c96a74493349533695400000000000000007a6466336334685469426823637c66a46c93693964836db966680000000000004da75b975c975c975b975c975c974b846da44a6239cc48bb7c9558aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+			}
 		}
-	], "enums": [{ "identifier": "ItemType", "uid": 6, "values": [
-		{ "id": "Chest", "tileRect": { "tilesetUid": 4, "x": 64, "y": 128, "w": 16, "h": 16 }, "color": 12470831 },
-		{ "id": "SilverKey", "tileRect": { "tilesetUid": 4, "x": 128, "y": 128, "w": 16, "h": 16 }, "color": 14120515 },
-		{ "id": "GoldKey", "tileRect": { "tilesetUid": 4, "x": 144, "y": 144, "w": 16, "h": 16 }, "color": 15389866 },
-		{ "id": "SmallRedPotion", "tileRect": { "tilesetUid": 4, "x": 128, "y": 144, "w": 16, "h": 16 }, "color": 14984818 },
-		{ "id": "LargeRedPotion", "tileRect": { "tilesetUid": 4, "x": 144, "y": 128, "w": 16, "h": 16 }, "color": 7552569 },
-		{ "id": "SmallBluePotion", "tileRect": { "tilesetUid": 4, "x": 112, "y": 128, "w": 16, "h": 16 }, "color": 4073265 },
-		{ "id": "LargeBluePotion", "tileRect": { "tilesetUid": 4, "x": 112, "y": 144, "w": 16, "h": 16 }, "color": 16690740 }
-	], "iconTilesetUid": 4, "externalRelPath": null, "externalFileChecksum": null, "tags": [] }], "externalEnums": [], "levelFields": [] },
+	], "enums": [
+		{ "identifier": "ItemType", "uid": 6, "values": [
+			{ "id": "Chest", "tileRect": { "tilesetUid": 4, "x": 64, "y": 128, "w": 16, "h": 16 }, "color": 12470831 },
+			{ "id": "SilverKey", "tileRect": { "tilesetUid": 4, "x": 128, "y": 128, "w": 16, "h": 16 }, "color": 14120515 },
+			{ "id": "GoldKey", "tileRect": { "tilesetUid": 4, "x": 144, "y": 144, "w": 16, "h": 16 }, "color": 15389866 },
+			{ "id": "SmallRedPotion", "tileRect": { "tilesetUid": 4, "x": 128, "y": 144, "w": 16, "h": 16 }, "color": 14984818 },
+			{ "id": "LargeRedPotion", "tileRect": { "tilesetUid": 4, "x": 144, "y": 128, "w": 16, "h": 16 }, "color": 7552569 },
+			{ "id": "SmallBluePotion", "tileRect": { "tilesetUid": 4, "x": 112, "y": 128, "w": 16, "h": 16 }, "color": 4073265 },
+			{ "id": "LargeBluePotion", "tileRect": { "tilesetUid": 4, "x": 112, "y": 144, "w": 16, "h": 16 }, "color": 16690740 }
+		], "iconTilesetUid": 4, "externalRelPath": null, "externalFileChecksum": null, "tags": [] },
+		{ "identifier": "TrapType", "uid": 15, "values": [
+			{ "id": "Up", "tileRect": { "tilesetUid": 14, "x": 256, "y": 64, "w": 32, "h": 32 }, "color": 12470831 },
+			{ "id": "Down", "tileRect": { "tilesetUid": 14, "x": 288, "y": 64, "w": 32, "h": 32 }, "color": 14120515 },
+			{ "id": "Left", "tileRect": { "tilesetUid": 14, "x": 320, "y": 64, "w": 32, "h": 32 }, "color": 15389866 },
+			{ "id": "Right", "tileRect": { "tilesetUid": 14, "x": 352, "y": 64, "w": 32, "h": 32 }, "color": 14984818 },
+			{ "id": "Catapult", "tileRect": { "tilesetUid": 14, "x": 0, "y": 0, "w": 32, "h": 32 }, "color": 7552569 },
+			{ "id": "Rock", "tileRect": { "tilesetUid": 14, "x": 32, "y": 0, "w": 32, "h": 32 }, "color": 4073265 }
+		], "iconTilesetUid": 14, "externalRelPath": null, "externalFileChecksum": null, "tags": [] }
+	], "externalEnums": [], "levelFields": [
+		{
+			"identifier": "HandTraps",
+			"doc": null,
+			"__type": "Array<LocalEnum.TrapType>",
+			"uid": 16,
+			"type": "F_Enum(15)",
+			"isArray": true,
+			"canBeNull": false,
+			"arrayMinLength": null,
+			"arrayMaxLength": null,
+			"editorDisplayMode": "Hidden",
+			"editorDisplayScale": 1,
+			"editorDisplayPos": "Above",
+			"editorLinkStyle": "StraightArrow",
+			"editorDisplayColor": null,
+			"editorAlwaysShow": false,
+			"editorShowInWorld": true,
+			"editorCutLongValues": true,
+			"editorTextSuffix": null,
+			"editorTextPrefix": null,
+			"useForSmartColor": false,
+			"exportToToc": false,
+			"searchable": false,
+			"min": null,
+			"max": null,
+			"regex": null,
+			"acceptFileTypes": null,
+			"defaultOverride": null,
+			"textLanguageMode": null,
+			"symmetricalRef": false,
+			"autoChainRef": true,
+			"allowOutOfLevelRef": true,
+			"allowedRefs": "OnlySame",
+			"allowedRefsEntityUid": null,
+			"allowedRefTags": [],
+			"tilesetUid": null
+		},
+		{
+			"identifier": "HandAmount",
+			"doc": null,
+			"__type": "Array<Int>",
+			"uid": 13,
+			"type": "F_Int",
+			"isArray": true,
+			"canBeNull": false,
+			"arrayMinLength": null,
+			"arrayMaxLength": null,
+			"editorDisplayMode": "Hidden",
+			"editorDisplayScale": 1,
+			"editorDisplayPos": "Above",
+			"editorLinkStyle": "StraightArrow",
+			"editorDisplayColor": null,
+			"editorAlwaysShow": false,
+			"editorShowInWorld": true,
+			"editorCutLongValues": true,
+			"editorTextSuffix": null,
+			"editorTextPrefix": null,
+			"useForSmartColor": false,
+			"exportToToc": false,
+			"searchable": false,
+			"min": null,
+			"max": null,
+			"regex": null,
+			"acceptFileTypes": null,
+			"defaultOverride": null,
+			"textLanguageMode": null,
+			"symmetricalRef": false,
+			"autoChainRef": true,
+			"allowOutOfLevelRef": true,
+			"allowedRefs": "OnlySame",
+			"allowedRefsEntityUid": null,
+			"allowedRefTags": [],
+			"tilesetUid": null
+		}
+	] },
 	"levels": [
 		{
 			"identifier": "Level_0",
@@ -307,17 +414,59 @@
 			"worldDepth": 0,
 			"pxWid": 256,
 			"pxHei": 256,
-			"__bgColor": "#696A79",
-			"bgColor": null,
+			"__bgColor": "#000000",
+			"bgColor": "#000000",
 			"useAutoIdentifier": true,
 			"bgRelPath": null,
 			"bgPos": null,
 			"bgPivotX": 0.5,
 			"bgPivotY": 0.5,
-			"__smartColor": "#ADADB5",
+			"__smartColor": "#737373",
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [],
+			"fieldInstances": [
+				{ "__identifier": "HandTraps", "__type": "Array<LocalEnum.TrapType>", "__value": [
+					"Up",
+					"Down",
+					"Left",
+					"Right",
+					"Catapult",
+					"Rock"
+				], "__tile": null, "defUid": 16, "realEditorValues": [
+					{
+						"id": "V_String",
+						"params": ["Up"]
+					},
+					{
+						"id": "V_String",
+						"params": ["Down"]
+					},
+					{
+						"id": "V_String",
+						"params": ["Left"]
+					},
+					{
+						"id": "V_String",
+						"params": ["Right"]
+					},
+					{
+						"id": "V_String",
+						"params": ["Catapult"]
+					},
+					{
+						"id": "V_String",
+						"params": ["Rock"]
+					}
+				] },
+				{ "__identifier": "HandAmount", "__type": "Array<Int>", "__value": [2,3,1,1,1,0], "__tile": null, "defUid": 13, "realEditorValues": [
+					{ "id": "V_Int", "params": [2] },
+					{ "id": "V_Int", "params": [3] },
+					{ "id": "V_Int", "params": [1] },
+					{ "id": "V_Int", "params": [1] },
+					{ "id": "V_Int", "params": [1] },
+					null
+				] }
+			],
 			"layerInstances": [
 				{
 					"__identifier": "Logic",

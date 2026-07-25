@@ -1,6 +1,6 @@
 use bevy::{prelude::*, text::FontSourceTemplate};
 
-use crate::gamemodes::Traps;
+use crate::{GameState, gamemodes::Traps};
 
 const ITEM_BUTTON_DISABLED: Rect = Rect {
     min: Vec2 { x: 192.0, y: 96.0 },
@@ -91,7 +91,7 @@ pub fn item_button(item: Traps, amount: u32) -> impl Scene {
         Traps::Down => (1.0, 2.0),
         Traps::Right => (3.0, 2.0),
         Traps::Catapult => (0.0, 0.0),
-        Traps::Rocks => (1.0, 0.0),
+        Traps::Rock => (1.0, 0.0),
     };
 
     let icon_rect = Some(Rect {
@@ -167,6 +167,38 @@ pub fn item_button(item: Traps, amount: u32) -> impl Scene {
         ]
         on(item_enter)
         on(item_leave)
+    }
+}
+
+pub fn play_button() -> impl Scene {
+    let rect = Rect {
+        min: Vec2 {
+            x: 12.0 * 32.0,
+            y: 0.0 * 32.0,
+        },
+        max: Vec2 {
+            x: 13.0 * 32.0,
+            y: 1.0 * 32.0,
+        },
+    };
+
+    bsn! {
+        #Button
+        Node {
+            width: px(96),
+            height: px(96),
+        }
+        ImageNode {
+            image: "ui/icons.png",
+            rect: rect,
+        }
+        on(|_: On<Pointer<Click>>, state: Res<State<GameState>>, mut next_state: ResMut<NextState<GameState>>| {
+            if *state == GameState::EditLevel {
+                next_state.set(GameState::PlayLevel);
+            } else {
+                next_state.set(GameState::EditLevel);
+            }
+        })
     }
 }
 

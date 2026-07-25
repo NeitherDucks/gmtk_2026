@@ -1,6 +1,10 @@
 #![allow(unused)]
 
-use crate::{GameState, asset_loading::AssetHandles, menus::widgets::item_button};
+use crate::{
+    GameState,
+    asset_loading::AssetHandles,
+    menus::widgets::{item_button, play_button},
+};
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
@@ -133,15 +137,37 @@ pub struct DwarfCharacter {
 #[derive(Component, Default, Clone)]
 pub struct EditingLevelTag;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Component, Default, Clone)]
+pub struct HandBarTag;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Traps {
     Up,
     Left,
     Down,
     Right,
     Catapult,
-    Rocks,
+    Rock,
 }
+
+impl TryFrom<String> for Traps {
+    type Error = &'static str;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "Up" => Ok(Traps::Up),
+            "Down" => Ok(Traps::Down),
+            "Left" => Ok(Traps::Left),
+            "Right" => Ok(Traps::Right),
+            "Catapult" => Ok(Traps::Catapult),
+            "Rock" => Ok(Traps::Rock),
+            _ => Err("Unknown trap"),
+        }
+    }
+}
+
+#[derive(Debug, Resource)]
+pub struct Hand(Vec<(Traps, u32)>);
 
 pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     // We spawn our selected level
@@ -398,17 +424,6 @@ fn clone_dwarf_parts_animation(dwarf: &DwarfCharacter, handles: &AssetHandles) -
 pub fn cleanup() {}
 
 pub fn setup_ui(mut commands: Commands) {
-    let rect = Rect {
-        min: Vec2 {
-            x: 12.0 * 32.0,
-            y: 0.0 * 32.0,
-        },
-        max: Vec2 {
-            x: 13.0 * 32.0,
-            y: 1.0 * 32.0,
-        },
-    };
-
     commands.queue_spawn_scene(bsn! {
         EditingLevelTag
         Node {
@@ -418,6 +433,7 @@ pub fn setup_ui(mut commands: Commands) {
             justify_content: JustifyContent::Center,
         }
         Children [
+            HandBarTag
             Node {
                 width: percent(100),
                 height: percent(95),
@@ -426,33 +442,40 @@ pub fn setup_ui(mut commands: Commands) {
                 justify_content: JustifyContent::Center,
             }
             Children [
-                item_button(Traps::Up, 2),
-                item_button(Traps::Down, 3),
-                item_button(Traps::Left, 1),
-                item_button(Traps::Right, 5),
-                item_button(Traps::Catapult, 1),
-                item_button(Traps::Rocks, 0),
-                (
-                    #Button
-                    Node {
-                        width: px(96),
-                        height: px(96),
-                    }
-                    ImageNode {
-                        image: "ui/icons.png",
-                        rect: rect,
-                    }
-                    on(|_: On<Pointer<Click>>, state: Res<State<GameState>>, mut next_state: ResMut<NextState<GameState>>| {
-                        if *state == GameState::EditLevel {
-                            next_state.set(GameState::PlayLevel);
-                        } else {
-                            next_state.set(GameState::EditLevel);
-                        }
-                    })
-                )
+                play_button(),
             ]
         ]
     });
+}
+
+/// Rebuilds the hand ui when the hand resource is changed
+pub fn update_hand_ui(
+    mut commands: Commands,
+    hand: Res<Hand>,
+    hand_bar: Single<Entity, With<HandBarTag>>,
+) {
+    commands.entity(*hand_bar).despawn_children();
+
+    let mut new_entities = Vec::new();
+    for (trap, amount) in &hand.0 {
+        new_entities.push(
+            commands
+                .queue_spawn_scene(bsn! {
+                    item_button(trap.clone(), *amount)
+                })
+                .id(),
+        );
+    }
+
+    new_entities.push(
+        commands
+            .queue_spawn_scene(bsn! {
+                play_button()
+            })
+            .id(),
+    );
+
+    commands.entity(*hand_bar).add_children(&new_entities);
 }
 
 pub fn cleanup_ui(mut commands: Commands, entity: Single<Entity, With<EditingLevelTag>>) {
@@ -504,10 +527,10 @@ fn apply_movement(
 
     // can we move forward?
     let destination = dwarf.grid_coords + grid_movement_direction;
-    println!(
-        "now at {:?}. move {:?} to {:?}",
-        dwarf.grid_coords, grid_movement_direction, destination
-    );
+    // println!(
+    //     "now at {:?}. move {:?} to {:?}",
+    //     dwarf.grid_coords, grid_movement_direction, destination
+    // );
     able_to_move_forward = !level_walls.in_wall(&destination);
 
     // Start moving if Idle
@@ -707,17 +730,90 @@ pub fn dev_input(
     }
 }
 
+pub fn get_hand(
+    mut commands: Commands,
+    mut level_messages: MessageReader<LevelEvent>,
+    ldtk_project_entities: Single<&LdtkProjectHandle>,
+    ldtk_project_assets: Res<Assets<LdtkProject>>,
+) {
+    for level_event in level_messages.read() {
+        if let LevelEvent::Spawned(level_iid) = level_event {
+            let ldtk_project = ldtk_project_assets
+                .get(*ldtk_project_entities)
+                .expect("LdtkProject should be loaded when level is spawned");
+            let level = ldtk_project
+                .get_raw_level_by_iid(level_iid.get())
+                .expect("spawned level should exist in project");
+
+            let mut traps = Vec::<Traps>::new();
+            let mut amounts = Vec::<u32>::new();
+
+            for (i, field) in level.field_instances.iter().enumerate() {
+                match &field.value {
+                    FieldValue::Enums(values) => {
+                        traps = values
+                            .iter()
+                            .cloned()
+                            .filter_map(|v| v.and_then(|v| v.try_into().ok()))
+                            .collect();
+                    }
+                    FieldValue::Ints(values) => {
+                        amounts = values
+                            .iter()
+                            .cloned()
+                            .filter_map(|v| v.map(|v| v as u32))
+                            .collect();
+                    }
+                    _ => {}
+                }
+            }
+
+            let hand = traps.into_iter().zip(amounts).collect();
+            commands.insert_resource(Hand(hand));
+        }
+    }
+}
+
+pub fn center_camera_to_level(
+    mut level_messages: MessageReader<LevelEvent>,
+    ldtk_project_entities: Single<&LdtkProjectHandle>,
+    ldtk_project_assets: Res<Assets<LdtkProject>>,
+    mut camera: Single<&mut Transform, With<Camera>>,
+) {
+    for level_event in level_messages.read() {
+        if let LevelEvent::Spawned(level_iid) = level_event {
+            let ldtk_project = ldtk_project_assets
+                .get(*ldtk_project_entities)
+                .expect("LdtkProject should be loaded when level is spawned");
+            let level = ldtk_project
+                .get_raw_level_by_iid(level_iid.get())
+                .expect("spawned level should exist in project");
+
+            let height = (level.px_hei / TILE_SIZE) / 2;
+            let width = (level.px_wid / TILE_SIZE) / 2;
+
+            let grid_offset = GridCoords::new(height, width);
+            let offset = bevy_ecs_ldtk::utils::grid_coords_to_translation(
+                grid_offset,
+                IVec2::splat(TILE_SIZE),
+            );
+
+            camera.translation += offset.extend(0.0);
+        }
+    }
+}
+
 pub fn cache_wall_locations(
     mut level_walls: ResMut<LevelWalls>,
     mut level_messages: MessageReader<LevelEvent>,
     walls: Query<&GridCoords, With<Wall>>,
-    ldtk_project_entities: Query<&LdtkProjectHandle>,
+    ldtk_project_entities: Single<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
-) -> Result {
+) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
             let ldtk_project = ldtk_project_assets
-                .get(ldtk_project_entities.single()?)
+                .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
             let level = ldtk_project
                 .get_raw_level_by_iid(level_iid.get())
@@ -730,25 +826,24 @@ pub fn cache_wall_locations(
                 level_width: level.px_wid / TILE_SIZE,
                 level_height: level.px_hei / TILE_SIZE,
             };
-            println!("{:?}", new_level_walls);
+            // println!("{:?}", new_level_walls);
 
             *level_walls = new_level_walls;
         }
     }
-    Ok(())
 }
 
 pub fn cache_chest_locations(
     mut level_chests: ResMut<LevelChests>,
     mut level_messages: MessageReader<LevelEvent>,
     chests: Query<&GridCoords, With<Chest>>,
-    ldtk_project_entities: Query<&LdtkProjectHandle>,
+    ldtk_project_entities: Single<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
-) -> Result {
+) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
             let ldtk_project = ldtk_project_assets
-                .get(ldtk_project_entities.single()?)
+                .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
             let level = ldtk_project
                 .get_raw_level_by_iid(level_iid.get())
@@ -761,12 +856,11 @@ pub fn cache_chest_locations(
                 level_width: level.px_wid / TILE_SIZE,
                 level_height: level.px_hei / TILE_SIZE,
             };
-            println!("{:?}", new_level_chests);
+            // println!("{:?}", new_level_chests);
 
             *level_chests = new_level_chests;
         }
     }
-    Ok(())
 }
 
 pub fn check_goal(dwarf: Res<DwarfCharacter>, goals: Query<&GridCoords, With<Goal>>) {
@@ -774,7 +868,7 @@ pub fn check_goal(dwarf: Res<DwarfCharacter>, goals: Query<&GridCoords, With<Goa
         .iter()
         .any(|(goal_grid_coords)| &dwarf.grid_coords == goal_grid_coords)
     {
-        println!("found goal at dwarf.grid_coords {:?}", dwarf.grid_coords);
+        // println!("found goal at dwarf.grid_coords {:?}", dwarf.grid_coords);
     }
 }
 
@@ -785,6 +879,6 @@ pub fn translate_grid_coords_entities(
         transform.translation =
             bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(TILE_SIZE))
                 .extend(transform.translation.z);
-        println!("entity {:?} at {:?}", e, grid_coords);
+        // println!("entity {:?} at {:?}", e, grid_coords);
     }
 }
