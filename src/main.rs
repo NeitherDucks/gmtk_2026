@@ -6,6 +6,7 @@
 pub mod asset_loading;
 pub mod gamemodes;
 pub mod menus;
+pub mod widgets;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
@@ -21,12 +22,23 @@ pub enum GameState {
     Options,
     Credits,
     ChooseLevel,
-    EditLevel,
+    // EditLevel,
     PlayLevel,
-    LevelFailure,
-    LevelSuccess,
+    // LevelFailure,
+    // LevelSuccess,
     NextLevel,
     WonGame,
+}
+
+#[derive(SubStates, Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[source(GameState = GameState::PlayLevel)]
+pub enum LevelState {
+    #[default]
+    Loading,
+    Editing,
+    Playing,
+    Success,
+    Failure,
 }
 
 /// Level to load once we go into `GameState::EditLevel`.
@@ -71,6 +83,7 @@ fn main() -> AppExit {
     ));
 
     app.init_state::<GameState>()
+        .add_sub_state::<LevelState>()
         .add_plugins((
             asset_loading::LoadingPlugin,
             menus::MenuPlugin,
@@ -82,7 +95,10 @@ fn main() -> AppExit {
     #[cfg(feature = "dev")]
     app.add_systems(
         Update,
-        (bevy::dev_tools::states::log_transitions::<GameState>,),
+        (
+            bevy::dev_tools::states::log_transitions::<GameState>,
+            bevy::dev_tools::states::log_transitions::<LevelState>,
+        ),
     );
 
     app.run()

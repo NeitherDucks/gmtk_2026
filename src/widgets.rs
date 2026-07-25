@@ -1,6 +1,6 @@
 use bevy::{prelude::*, text::FontSourceTemplate};
 
-use crate::{GameState, gamemodes::Traps};
+use crate::{LevelState, gamemodes::Traps};
 
 const ITEM_BUTTON_DISABLED: Rect = Rect {
     min: Vec2 { x: 192.0, y: 96.0 },
@@ -192,12 +192,8 @@ pub fn play_button() -> impl Scene {
             image: "ui/icons.png",
             rect: rect,
         }
-        on(|_: On<Pointer<Click>>, state: Res<State<GameState>>, mut next_state: ResMut<NextState<GameState>>| {
-            if *state == GameState::EditLevel {
-                next_state.set(GameState::PlayLevel);
-            } else {
-                next_state.set(GameState::EditLevel);
-            }
+        on(|_: On<Pointer<Click>>, mut next_state: ResMut<NextState<LevelState>>| {
+            next_state.set(LevelState::Playing);
         })
     }
 }

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     GameState,
-    menus::widgets::{fancy_pane, menu_button},
+    widgets::{fancy_pane, menu_button},
 };
 
 #[derive(Component, Default, Clone)]
@@ -47,7 +47,7 @@ pub fn setup(mut commands: Commands) {
                 (
                     menu_button("New Game", 36.0, 300, 75)
                     on(|_: On<Pointer<Click>>, mut next_state: ResMut<NextState<GameState>>| {
-                        next_state.set(GameState::EditLevel);
+                        next_state.set(GameState::PlayLevel);
                     })
                 ),
                 (

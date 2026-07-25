@@ -6,7 +6,6 @@ mod choose_level;
 mod credits;
 mod main_menu;
 mod options;
-pub mod widgets;
 
 pub struct MenuPlugin;
 
