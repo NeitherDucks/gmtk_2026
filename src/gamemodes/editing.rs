@@ -528,10 +528,10 @@ fn apply_movement(
 
     // can we move forward?
     let destination = dwarf.grid_coords + grid_movement_direction;
-    // println!(
-    //     "now at {:?}. move {:?} to {:?}",
-    //     dwarf.grid_coords, grid_movement_direction, destination
-    // );
+    println!(
+        "now at {:?}. move {:?} to {:?}",
+        dwarf.grid_coords, grid_movement_direction, destination
+    );
     able_to_move_forward = !level_walls.in_wall(&destination);
 
     // Start moving if Idle
@@ -800,6 +800,10 @@ pub fn center_camera_to_level(
             );
 
             camera.translation += offset.extend(0.0);
+        }
+    }
+}
+
 /*
 use bevy_ecs_ldtk::ldtk::loaded_level::*;
 
@@ -827,18 +831,51 @@ impl TryFrom<i32> for SpecialTile {
         }
     }
 }
+*/
 
 pub fn cache_wall_locations(
     mut level_walls: ResMut<LevelWalls>,
     mut level_messages: MessageReader<LevelEvent>,
     walls: Query<&GridCoords, With<Wall>>,
-    ldtk_project_entities: Single<&LdtkProjectHandle>,
+    ldtk_project_entities: Query<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
-) {
+) -> Result {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
             let ldtk_project = ldtk_project_assets
-                .get(*ldtk_project_entities)
+                .get(ldtk_project_entities.single()?)
+                .expect("LdtkProject should be loaded when level is spawned");
+            let level = ldtk_project
+                .get_raw_level_by_iid(level_iid.get())
+                .expect("spawned level should exist in project");
+
+            let wall_locations = walls.iter().copied().collect();
+
+            let new_level_walls = LevelWalls {
+                wall_locations,
+                level_width: level.px_wid / TILE_SIZE,
+                level_height: level.px_hei / TILE_SIZE,
+            };
+            println!("{:?}", new_level_walls);
+
+            *level_walls = new_level_walls;
+        }
+    }
+    Ok(())
+}
+
+/*
+pub fn cache_wall_locations(
+    mut level_walls: ResMut<LevelWalls>,
+    mut level_messages: MessageReader<LevelEvent>,
+    walls: Query<&GridCoords, With<Wall>>,
+    ldtk_project_entities: Query<&LdtkProjectHandle>,
+    ldtk_project_assets: Res<Assets<LdtkProject>>,
+) -> Result {
+    for level_event in level_messages.read() {
+        if let LevelEvent::Spawned(level_iid) = level_event {
+            let ldtk_project = ldtk_project_assets
+                .get(ldtk_project_entities.single()?)
                 .expect("LdtkProject should be loaded when level is spawned");
             let level = ldtk_project
                 .get_raw_level_by_iid(level_iid.get())
@@ -882,6 +919,7 @@ pub fn cache_wall_locations(
             *level_walls = new_level_walls;
         }
     }
+    Ok(())
 }
 */
 
@@ -908,7 +946,7 @@ pub fn cache_chest_locations(
                 level_width: level.px_wid / TILE_SIZE,
                 level_height: level.px_hei / TILE_SIZE,
             };
-            // println!("{:?}", new_level_chests);
+            println!("{:?}", new_level_chests);
 
             *level_chests = new_level_chests;
         }
@@ -920,7 +958,7 @@ pub fn check_goal(dwarf: Res<DwarfCharacter>, goals: Query<&GridCoords, With<Goa
         .iter()
         .any(|(goal_grid_coords)| &dwarf.grid_coords == goal_grid_coords)
     {
-        // println!("found goal at dwarf.grid_coords {:?}", dwarf.grid_coords);
+        println!("found goal at dwarf.grid_coords {:?}", dwarf.grid_coords);
     }
 }
 
@@ -931,6 +969,6 @@ pub fn translate_grid_coords_entities(
         transform.translation =
             bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(TILE_SIZE))
                 .extend(transform.translation.z);
-        //println!("entity {:?} at {:?}", e, grid_coords);
+        println!("entity {:?} at {:?}", e, grid_coords);
     }
 }
