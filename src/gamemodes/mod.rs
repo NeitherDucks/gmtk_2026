@@ -16,12 +16,7 @@ pub struct GameModesPlugin;
 impl Plugin for GameModesPlugin {
     fn build(&self, app: &mut App) {
         app.register_ldtk_entity::<Chest>("Chest")
-            .register_ldtk_int_cell::<IntCell1>(1)
-            .register_ldtk_int_cell::<IntCell2>(2)
-            .register_ldtk_int_cell::<IntCell3>(3)
-            .register_ldtk_int_cell::<IntCell4>(4)
-            .register_ldtk_int_cell::<IntCell5>(5)
-            .register_ldtk_int_cell::<IntCell6>(6)
+            .register_default_ldtk_int_cell::<HideIntCell>()
             .add_systems(
                 OnEnter(GameState::EditLevel),
                 (editing::setup, editing::setup_ui),
@@ -36,6 +31,10 @@ impl Plugin for GameModesPlugin {
                     (editing::dev_input, editing::process_action_request).chain(),
                 )
                     .run_if(in_state(GameState::EditLevel)),
+            )
+            .add_systems(
+                Update,
+                editing::playing_input.run_if(in_state(GameState::PlayLevel)),
             )
             .add_systems(
                 OnTransition {
@@ -79,81 +78,11 @@ impl Default for IntCell {
 
 /// Bundle to use for IntCell "1"
 #[derive(Bundle, LdtkIntCell)]
-pub struct IntCell1 {
+pub struct HideIntCell {
     tile_visible: TileVisible,
 }
 
-impl Default for IntCell1 {
-    fn default() -> Self {
-        Self {
-            tile_visible: TileVisible(false),
-        }
-    }
-}
-
-/// Bundle to use for IntCell "2"
-#[derive(Bundle, LdtkIntCell)]
-pub struct IntCell2 {
-    tile_visible: TileVisible,
-}
-
-impl Default for IntCell2 {
-    fn default() -> Self {
-        Self {
-            tile_visible: TileVisible(false),
-        }
-    }
-}
-
-/// Bundle to use for IntCell "3"
-#[derive(Bundle, LdtkIntCell)]
-pub struct IntCell3 {
-    tile_visible: TileVisible,
-}
-
-impl Default for IntCell3 {
-    fn default() -> Self {
-        Self {
-            tile_visible: TileVisible(false),
-        }
-    }
-}
-
-/// Bundle to use for IntCell "4"
-#[derive(Bundle, LdtkIntCell)]
-pub struct IntCell4 {
-    tile_visible: TileVisible,
-}
-
-impl Default for IntCell4 {
-    fn default() -> Self {
-        Self {
-            tile_visible: TileVisible(false),
-        }
-    }
-}
-
-/// Bundle to use for IntCell "5"
-#[derive(Bundle, LdtkIntCell)]
-pub struct IntCell5 {
-    tile_visible: TileVisible,
-}
-
-impl Default for IntCell5 {
-    fn default() -> Self {
-        Self {
-            tile_visible: TileVisible(false),
-        }
-    }
-}
-
-/// Bundle to use for IntCell "5"
-#[derive(Bundle, LdtkIntCell)]
-pub struct IntCell6 {
-    tile_visible: TileVisible,
-}
-
-impl Default for IntCell6 {
+impl Default for HideIntCell {
     fn default() -> Self {
         Self {
             tile_visible: TileVisible(false),

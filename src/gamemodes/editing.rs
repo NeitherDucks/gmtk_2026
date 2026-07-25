@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::{asset_loading::AssetHandles, menus::widgets::item_button};
+use crate::{GameState, asset_loading::AssetHandles, menus::widgets::item_button};
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
@@ -398,6 +398,17 @@ fn clone_dwarf_parts_animation(dwarf: &DwarfCharacter, handles: &AssetHandles) -
 pub fn cleanup() {}
 
 pub fn setup_ui(mut commands: Commands) {
+    let rect = Rect {
+        min: Vec2 {
+            x: 12.0 * 32.0,
+            y: 0.0 * 32.0,
+        },
+        max: Vec2 {
+            x: 13.0 * 32.0,
+            y: 1.0 * 32.0,
+        },
+    };
+
     commands.queue_spawn_scene(bsn! {
         EditingLevelTag
         Node {
@@ -421,6 +432,24 @@ pub fn setup_ui(mut commands: Commands) {
                 item_button(Traps::Right, 5),
                 item_button(Traps::Catapult, 1),
                 item_button(Traps::Rocks, 0),
+                (
+                    #Button
+                    Node {
+                        width: px(96),
+                        height: px(96),
+                    }
+                    ImageNode {
+                        image: "ui/icons.png",
+                        rect: rect,
+                    }
+                    on(|_: On<Pointer<Click>>, state: Res<State<GameState>>, mut next_state: ResMut<NextState<GameState>>| {
+                        if *state == GameState::EditLevel {
+                            next_state.set(GameState::PlayLevel);
+                        } else {
+                            next_state.set(GameState::EditLevel);
+                        }
+                    })
+                )
             ]
         ]
     });
@@ -603,6 +632,15 @@ pub fn process_action_request(
                 parts_transform.translation = body_pos + Vec3::new(0.0, 0.0, 1.0); // keep parts z one greater than body
             }
         }
+    }
+}
+
+pub fn playing_input(
+    input: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if input.just_pressed(KeyCode::Escape) {
+        next_state.set(GameState::EditLevel);
     }
 }
 
