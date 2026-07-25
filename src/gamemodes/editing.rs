@@ -9,6 +9,7 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use std::collections::{HashSet, VecDeque};
+use std::convert::TryFrom;
 
 const DWARF_MOVE_SPEED: f32 = 50.0;
 const TILE_SIZE: i32 = 16;
@@ -85,7 +86,7 @@ pub enum DwarfAction {
     Swing,     // only pickaxe or multitool; file for body action is PickaxeSwing
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
 pub enum DwarfColor {
     Blue,
     Red,
@@ -799,6 +800,30 @@ pub fn center_camera_to_level(
             );
 
             camera.translation += offset.extend(0.0);
+/*
+use bevy_ecs_ldtk::ldtk::loaded_level::*;
+
+enum SpecialTile {
+    None = 0,
+    Wall = 1,
+    BlueStart = 2,
+    RedStart = 3,
+    YellowStart = 4,
+    PurpleStart = 5,
+}
+
+impl TryFrom<i32> for SpecialTile {
+    type Error = ();
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(SpecialTile::None),
+            1 => Ok(SpecialTile::Wall),
+            2 => Ok(SpecialTile::BlueStart),
+            3 => Ok(SpecialTile::RedStart),
+            4 => Ok(SpecialTile::YellowStart),
+            5 => Ok(SpecialTile::PurpleStart),
+            _ => Err(()),
         }
     }
 }
@@ -819,19 +844,46 @@ pub fn cache_wall_locations(
                 .get_raw_level_by_iid(level_iid.get())
                 .expect("spawned level should exist in project");
 
-            let wall_locations = walls.iter().copied().collect();
+            let loaded_level: LoadedLevel = TryFrom::try_from(level)
+                .expect("failed to convert raw level to loaded level");
+            let logic_layer = loaded_level.layer_instances().iter().find(|layer| layer.identifier == "Logic")
+                .unwrap();
+            println!("{:?}", logic_layer);
+
+            let mut wall_locations: HashSet<GridCoords> = HashSet::new(); // = walls.iter().copied().collect();
+            let mut dwarf_locations: Vec<(GridCoords, DwarfColor)> = Vec::new();
+
+            for r in 0..logic_layer.c_hei {
+                for c in 0..logic_layer.c_wid {
+                    let coords = GridCoords {y: r, x: c};
+                    let t = SpecialTile::try_from(logic_layer.int_grid_csv[(r * logic_layer.c_wid + c) as usize])
+                        .expect("Value outside SpecialTile range");
+                    match t {
+                        SpecialTile::None => {},
+                        SpecialTile::Wall => { wall_locations.insert(coords); },
+                        SpecialTile::BlueStart => { dwarf_locations.push((coords, DwarfColor::Blue)); },
+                        SpecialTile::RedStart => { dwarf_locations.push((coords, DwarfColor::Red)); },
+                        SpecialTile::YellowStart => { dwarf_locations.push((coords, DwarfColor::Yellow)); },
+                        SpecialTile::PurpleStart => { dwarf_locations.push((coords, DwarfColor::Purple)); },
+                    }
+                }
+            }
+
+            //println!("walls: {:?}", wall_locations);
+            //println!("starts: {:?}", dwarf_locations);
 
             let new_level_walls = LevelWalls {
                 wall_locations,
                 level_width: level.px_wid / TILE_SIZE,
                 level_height: level.px_hei / TILE_SIZE,
             };
-            // println!("{:?}", new_level_walls);
+            //println!("{:?}", new_level_walls);
 
             *level_walls = new_level_walls;
         }
     }
 }
+*/
 
 pub fn cache_chest_locations(
     mut level_chests: ResMut<LevelChests>,
@@ -879,6 +931,6 @@ pub fn translate_grid_coords_entities(
         transform.translation =
             bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(TILE_SIZE))
                 .extend(transform.translation.z);
-        // println!("entity {:?} at {:?}", e, grid_coords);
+        //println!("entity {:?} at {:?}", e, grid_coords);
     }
 }
