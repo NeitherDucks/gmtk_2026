@@ -3,12 +3,12 @@ use bevy::prelude::*;
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
+    entities::GoalTag,
     gamemodes::{
         ActionsRequested, DwarfAction, DwarfActionRequest, DwarfCharacter, DwarfColor,
         DwarfDirection, DwarfTool, LevelWalls,
         dwarf::{update_dwarf_body_animation, update_dwarf_parts_animation},
     },
-    entities::GoalTag,
 };
 use bevy_ecs_ldtk::prelude::*;
 

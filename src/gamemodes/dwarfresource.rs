@@ -1,5 +1,5 @@
-use bevy::prelude::Plugin;
 use bevy::prelude::App;
+use bevy::prelude::Plugin;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum DwarfResource {
@@ -11,6 +11,5 @@ pub enum DwarfResource {
 pub struct DwarfResourcePlugin;
 
 impl Plugin for DwarfResourcePlugin {
-    fn build(&self, _app: &mut App) {
-    }
+    fn build(&self, _app: &mut App) {}
 }

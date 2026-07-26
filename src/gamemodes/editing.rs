@@ -2,10 +2,10 @@ use crate::{
     LevelState,
     asset_loading::AssetHandles,
     entities::Trap,
-    gamemodes::{Grid, Item},
-    gamemodes::hand::Hand,
-    entities::TrapType,
     entities::TrapTag,
+    entities::TrapType,
+    gamemodes::hand::Hand,
+    gamemodes::{Grid, Item},
 };
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::GridCoords;

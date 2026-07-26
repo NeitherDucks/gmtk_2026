@@ -1,6 +1,5 @@
-use bevy::prelude::*;
 use crate::entities::TrapType;
-
+use bevy::prelude::*;
 
 #[derive(Debug, Resource)]
 pub struct Hand(pub Vec<(TrapType, u32)>);

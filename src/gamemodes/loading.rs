@@ -5,9 +5,7 @@ use bevy_ecs_ldtk::prelude::*;
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
-    entities::{
-        ChestTag, DoorTag, StartingPointTag, TrapType,
-    },
+    entities::{ChestTag, DoorTag, StartingPointTag, TrapType},
     gamemodes::{
         ActionsRequested, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection, DwarfResource,
         DwarfTool, Grid, Item, LevelChests, LevelWalls,

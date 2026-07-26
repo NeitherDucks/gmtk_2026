@@ -6,34 +6,34 @@ use bevy_ecs_ldtk::prelude::*;
 use crate::entities::TrapType;
 
 mod dwarf;
+mod dwarfaction;
+mod dwarfactionrequest;
 mod dwarfcharacter;
-mod dwarftool;
 mod dwarfcolor;
 mod dwarfdirection;
-mod dwarfaction;
 mod dwarfresource;
-mod dwarfactionrequest;
+mod dwarftool;
 mod editing;
 mod editing_ui;
+mod hand;
 mod loading;
 mod playing;
 mod playing_ui;
-mod hand;
 
+pub use dwarfaction::DwarfAction;
 pub use dwarfcharacter::DwarfCharacter;
-pub use dwarftool::DwarfTool;
 pub use dwarfcolor::DwarfColor;
 pub use dwarfdirection::DwarfDirection;
-pub use dwarfaction::DwarfAction;
 pub use dwarfresource::DwarfResource;
+pub use dwarftool::DwarfTool;
 
+use dwarfaction::DwarfActionPlugin;
+use dwarfactionrequest::DwarfActionRequest;
 use dwarfcharacter::DwarfCharacterPlugin;
-use dwarftool::DwarfToolPlugin;
 use dwarfcolor::DwarfColorPlugin;
 use dwarfdirection::DwarfDirectionPlugin;
-use dwarfaction::DwarfActionPlugin;
 use dwarfresource::DwarfResourcePlugin;
-use dwarfactionrequest::DwarfActionRequest;
+use dwarftool::DwarfToolPlugin;
 
 pub struct GameModesPlugin;
 
@@ -60,7 +60,6 @@ impl Plugin for GameModesPlugin {
             ));
     }
 }
-
 
 #[derive(Debug)]
 pub enum Item {

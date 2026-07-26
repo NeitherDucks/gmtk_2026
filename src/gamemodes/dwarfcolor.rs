@@ -1,6 +1,6 @@
+use bevy::prelude::App;
 use bevy::prelude::Component;
 use bevy::prelude::Plugin;
-use bevy::prelude::App;
 use bevy::prelude::Reflect;
 use bevy_ecs_ldtk::EntityInstance;
 use bevy_ecs_ldtk::prelude::ldtk::ldtk_fields::*;

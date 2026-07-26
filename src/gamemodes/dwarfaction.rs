@@ -1,5 +1,5 @@
-use bevy::prelude::Plugin;
 use bevy::prelude::App;
+use bevy::prelude::Plugin;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum DwarfAction {
@@ -19,6 +19,5 @@ pub enum DwarfAction {
 pub struct DwarfActionPlugin;
 
 impl Plugin for DwarfActionPlugin {
-    fn build(&self, _app: &mut App) {
-    }
+    fn build(&self, _app: &mut App) {}
 }

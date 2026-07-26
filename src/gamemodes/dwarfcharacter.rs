@@ -1,10 +1,10 @@
+use crate::gamemodes::dwarfaction::DwarfAction;
+use crate::gamemodes::dwarfcolor::DwarfColor;
+use crate::gamemodes::dwarfdirection::DwarfDirection;
+use crate::gamemodes::dwarfresource::DwarfResource;
+use crate::gamemodes::dwarftool::DwarfTool;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
-use crate::gamemodes::dwarfcolor::DwarfColor;
-use crate::gamemodes::dwarfaction::DwarfAction;
-use crate::gamemodes::dwarfdirection::DwarfDirection;
-use crate::gamemodes::dwarftool::DwarfTool;
-use crate::gamemodes::dwarfresource::DwarfResource;
 
 #[derive(Resource, Clone)]
 pub struct DwarfCharacter {
@@ -22,6 +22,5 @@ pub struct DwarfCharacter {
 pub struct DwarfCharacterPlugin;
 
 impl Plugin for DwarfCharacterPlugin {
-    fn build(&self, _app: &mut App) {
-    }
+    fn build(&self, _app: &mut App) {}
 }
