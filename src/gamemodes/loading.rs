@@ -2,8 +2,8 @@
 
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
-use bevy_ecs_ldtk::prelude::*;
 use bevy_ecs_ldtk::ldtk::loaded_level::*;
+use bevy_ecs_ldtk::prelude::*;
 use std::collections::HashSet;
 
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
     asset_loading::AssetHandles,
     gamemodes::{
         ActionsRequested, ChestTag, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection,
-        DwarfResource, DwarfTool, Hand, LevelChests, LevelWalls, Traps, WallTag,
+        DwarfResource, DwarfTool, Hand, LevelChests, LevelWalls, TrapType, WallTag,
         dwarf::{clone_dwarf_body_animation, clone_dwarf_parts_animation},
     },
 };
@@ -27,6 +27,7 @@ impl Plugin for LoadingGameModePlugin {
                 Update,
                 (
                     //process_map_extras,
+                    get_level_size,
                     cache_wall_locations,
                     cache_chest_locations,
                     center_camera_to_level,
@@ -128,86 +129,10 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
 // registered DwarfStart LdtkEntity (marker component) bundle, with DwarfColor, DwarfDirection, and DwarfTool components
 // registered Door LdtkEntity which may also have a Lock component on it
 
-
-
-pub fn cache_wall_locations(
+pub fn get_level_size(
     mut level_walls: ResMut<LevelWalls>,
     mut level_messages: MessageReader<LevelEvent>,
     walls: Query<&GridCoords, With<WallTag>>,
-    ldtk_project_entities: Query<&LdtkProjectHandle>,
-    ldtk_project_assets: Res<Assets<LdtkProject>>,
-) -> Result {
-    for level_event in level_messages.read() {
-        if let LevelEvent::Spawned(level_iid) = level_event {
-            let ldtk_project = ldtk_project_assets
-                .get(ldtk_project_entities.single()?)
-                .expect("LdtkProject should be loaded when level is spawned");
-            let level = ldtk_project
-                .get_raw_level_by_iid(level_iid.get())
-                .expect("spawned level should exist in project");
-
-            let wall_locations = walls.iter().copied().collect();
-
-            let new_level_walls = LevelWalls {
-                wall_locations,
-                level_width: level.px_wid / TILE_SIZE,
-                level_height: level.px_hei / TILE_SIZE,
-            };
-            println!("{:?}", new_level_walls);
-
-            *level_walls = new_level_walls;
-        }
-    }
-    Ok(())
-}
-
-/*
-pub fn process_map_extras(
-    mut level_walls: ResMut<LevelWalls>,
-    mut level_messages: MessageReader<LevelEvent>,
-    walls: Query<&GridCoords, With<WallTag>>,
-    ldtk_project_entities: Query<&LdtkProjectHandle>,
-    ldtk_project_assets: Res<Assets<LdtkProject>>,
-) -> Result {
-    for level_event in level_messages.read() {
-        if let LevelEvent::Spawned(level_iid) = level_event {
-            let ldtk_project = ldtk_project_assets
-                .get(ldtk_project_entities.single()?)
-                .expect("LdtkProject should be loaded when level is spawned");
-            let level = ldtk_project
-                .get_raw_level_by_iid(level_iid.get())
-                .expect("spawned level should exist in project");
-
-            let loaded_level: LoadedLevel = TryFrom::try_from(level)
-                .expect("failed to convert raw level to loaded level");
-            let logic_layer = loaded_level.layer_instances().iter().find(|layer| layer.identifier == "Logic")
-                .unwrap();
-            println!("{:?}", logic_layer);
-
-            let mut wall_locations: HashSet<GridCoords> = HashSet::new();
-            let mut dwarf_locations: Vec<(GridCoords, DwarfColor, DwarfDirection)> = Vec::new();
-
-            //println!("walls: {:?}", wall_locations);
-            //println!("starts: {:?}", dwarf_locations);
-
-            let new_level_walls = LevelWalls {
-                wall_locations,
-                level_width: level.px_wid / TILE_SIZE,
-                level_height: level.px_hei / TILE_SIZE,
-            };
-            //println!("{:?}", new_level_walls);
-
-            *level_walls = new_level_walls;
-        }
-    }
-    Ok(())
-}
-*/
-
-pub fn cache_chest_locations(
-    mut level_chests: ResMut<LevelChests>,
-    mut level_messages: MessageReader<LevelEvent>,
-    chests: Query<&GridCoords, With<ChestTag>>,
     ldtk_project_entities: Single<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
 ) {
@@ -220,17 +145,30 @@ pub fn cache_chest_locations(
                 .get_raw_level_by_iid(level_iid.get())
                 .expect("spawned level should exist in project");
 
-            let chest_locations = chests.iter().copied().collect();
-
-            let new_level_chests = LevelChests {
-                chest_locations,
-                level_width: level.px_wid / TILE_SIZE,
-                level_height: level.px_hei / TILE_SIZE,
-            };
-            println!("{:?}", new_level_chests);
-
-            *level_chests = new_level_chests;
+            level_walls.level_width = level.px_wid / TILE_SIZE;
+            level_walls.level_height = level.px_hei / TILE_SIZE;
         }
+    }
+}
+
+pub fn cache_wall_locations(
+    query: Query<(Entity, &GridCoords, &TileEnumTags), Added<TileEnumTags>>,
+    mut level_walls: ResMut<LevelWalls>,
+) {
+    for (entity, coords, tag) in query {
+        if tag.tags.contains(&"Wall".to_string()) {
+            level_walls.wall_locations.insert(*coords);
+        }
+    }
+}
+
+pub fn cache_chest_locations(
+    mut level_chests: ResMut<LevelChests>,
+    chests: Query<&GridCoords, Added<ChestTag>>,
+) {
+    for coords in chests {
+        info!("Found chest at: {coords:?}");
+        level_chests.chest_locations.insert(*coords);
     }
 }
 
@@ -249,7 +187,7 @@ pub fn get_hand(
                 .get_raw_level_by_iid(level_iid.get())
                 .expect("spawned level should exist in project");
 
-            let mut traps = Vec::<Traps>::new();
+            let mut traps = Vec::<TrapType>::new();
             let mut amounts = Vec::<u32>::new();
 
             for field in &level.field_instances {
@@ -258,7 +196,7 @@ pub fn get_hand(
                         traps = values
                             .iter()
                             .cloned()
-                            .filter_map(|v| v.and_then(|v| v.try_into().ok()))
+                            .filter_map(|v| v.map(|v| (&v).into()))
                             .collect();
                     }
                     FieldValue::Ints(values) => {

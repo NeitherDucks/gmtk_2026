@@ -1,6 +1,6 @@
 use bevy::{prelude::*, text::FontSourceTemplate};
 
-use crate::{LevelState, gamemodes::Traps};
+use crate::{LevelState, gamemodes::TrapType};
 
 const ITEM_BUTTON_DISABLED: Rect = Rect {
     min: Vec2 { x: 192.0, y: 96.0 },
@@ -78,7 +78,7 @@ pub fn menu_button(text: &str, font_size: f32, width: i32, height: i32) -> impl 
     }
 }
 
-pub fn item_button(item: Traps, amount: u32) -> impl Scene {
+pub fn item_button(item: TrapType, amount: u32) -> impl Scene {
     let button_rect = Some(if amount > 0 {
         ITEM_BUTTON_NORMAL
     } else {
@@ -86,12 +86,13 @@ pub fn item_button(item: Traps, amount: u32) -> impl Scene {
     });
 
     let (x, y) = match item {
-        Traps::Up => (0.0, 2.0),
-        Traps::Left => (2.0, 2.0),
-        Traps::Down => (1.0, 2.0),
-        Traps::Right => (3.0, 2.0),
-        Traps::Catapult => (0.0, 0.0),
-        Traps::Rock => (1.0, 0.0),
+        TrapType::Up => (0.0, 2.0),
+        TrapType::Left => (2.0, 2.0),
+        TrapType::Down => (1.0, 2.0),
+        TrapType::Right => (3.0, 2.0),
+        TrapType::Catapult => (0.0, 0.0),
+        TrapType::Rock => (1.0, 0.0),
+        TrapType::Nothing => (27.0, 0.0),
     };
 
     let icon_rect = Some(Rect {

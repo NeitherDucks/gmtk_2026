@@ -14,7 +14,13 @@ pub struct GameModesPlugin;
 
 impl Plugin for GameModesPlugin {
     fn build(&self, app: &mut App) {
-        app.register_ldtk_entity::<Chest>("Chest")
+        app //
+            .register_type::<DwarfColor>()
+            .register_type::<DwarfTool>()
+            .register_type::<ChestLoot>()
+            .register_ldtk_entity::<Chest>("Chest")
+            .register_ldtk_entity::<StartingPoint>("StartingPoint")
+            .register_ldtk_entity::<Trap>("Trap")
             .insert_resource(LdtkSettings {
                 int_grid_rendering: IntGridRendering::Invisible,
                 set_clear_color: SetClearColor::FromLevelBackground,
@@ -37,6 +43,92 @@ pub struct Chest {
     sprite: Sprite,
     #[grid_coords]
     grid_coords: GridCoords,
+    tag: ChestTag,
+    #[with(ChestLoot::from_field)]
+    loot: ChestLoot,
+}
+
+#[derive(Debug, Default, Component, Reflect)]
+pub struct ChestLoot(pub Vec<Item>);
+
+impl ChestLoot {
+    pub fn from_field(entity_instance: &EntityInstance) -> Self {
+        if let Ok(loot) = entity_instance.get_maybe_enums_field("Loot") {
+            ChestLoot(loot.iter().flatten().map(|v| v.into()).collect())
+        } else {
+            ChestLoot(Vec::new())
+        }
+    }
+}
+
+#[derive(Default, Component)]
+pub struct ChestTag;
+
+#[derive(Default, Resource, Debug)]
+pub struct LevelChests {
+    chest_locations: HashSet<GridCoords>,
+    // level_width: i32,
+    // level_height: i32,
+}
+
+impl LevelChests {
+    pub fn at_item(&self, grid_coords: &GridCoords) -> bool {
+        self.chest_locations.contains(grid_coords)
+    }
+}
+
+#[derive(Bundle, LdtkEntity, Default)]
+pub struct StartingPoint {
+    #[grid_coords]
+    grid_coords: GridCoords,
+    tag: StarintPointTag,
+    #[with(DwarfColor::from_field)]
+    color: DwarfColor,
+    #[with(DwarfTool::from_field)]
+    tool: DwarfTool,
+}
+
+#[derive(Default, Component)]
+pub struct StarintPointTag;
+
+#[derive(Bundle, LdtkEntity, Default)]
+pub struct Trap {
+    #[sprite_sheet]
+    sprite: Sprite,
+    #[grid_coords]
+    grid_coords: GridCoords,
+    tag: TrapTag,
+    #[with(TrapType::from_field)]
+    trap: TrapType,
+}
+
+#[derive(Default, Component)]
+pub struct TrapTag;
+
+#[derive(Component, Default, Debug, PartialEq, Eq, Reflect)]
+pub enum Item {
+    #[default]
+    None,
+    SilverKey,
+    GoldKey,
+    SmallRedPotion,
+    LargeRedPotion,
+    SmallBluePotion,
+    LargeBluePotion,
+}
+
+impl From<&String> for Item {
+    fn from(value: &String) -> Self {
+        match value.as_str() {
+            "SilverKey" => Self::SilverKey,
+            "GoldKey" => Self::GoldKey,
+            "SmallRedPotion" => Self::SmallRedPotion,
+            "LargeRedPotion" => Self::LargeRedPotion,
+            "SmallBluePotion" => Self::SmallBluePotion,
+            "LargeBluePotion" => Self::LargeBluePotion,
+            _ => Self::None,
+        }
+    }
 }
 
 #[derive(Default, Component)]
@@ -44,11 +136,6 @@ pub struct GoalTag;
 
 #[derive(Default, Component)]
 pub struct WallTag;
-
-#[derive(Default, Bundle, LdtkIntCell)]
-struct WallBundle {
-    wall: WallTag,
-}
 
 #[derive(Default, Resource, Debug)]
 pub struct LevelWalls {
@@ -64,27 +151,6 @@ impl LevelWalls {
             || grid_coords.x >= self.level_width
             || grid_coords.y >= self.level_height
             || self.wall_locations.contains(grid_coords)
-    }
-}
-
-#[derive(Default, Component)]
-pub struct ChestTag;
-
-#[derive(Default, Bundle, LdtkIntCell)]
-struct ChestBundle {
-    chest: Chest,
-}
-
-#[derive(Default, Resource, Debug)]
-pub struct LevelChests {
-    chest_locations: HashSet<GridCoords>,
-    level_width: i32,
-    level_height: i32,
-}
-
-impl LevelChests {
-    fn at_item(&self, grid_coords: &GridCoords) -> bool {
-        self.chest_locations.contains(grid_coords)
     }
 }
 
@@ -111,12 +177,28 @@ pub enum DwarfAction {
     Swing,     // only pickaxe or multitool; file for body action is PickaxeSwing
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
+#[derive(Component, Clone, Copy, Eq, PartialEq, Hash, Debug, Default, Reflect)]
 pub enum DwarfColor {
+    #[default]
     Blue,
     Red,
     Yellow,
     Purple,
+}
+
+impl DwarfColor {
+    pub fn from_field(entity_instance: &EntityInstance) -> Self {
+        match entity_instance
+            .get_enum_field("DwarfColor")
+            .map(String::as_str)
+        {
+            Ok("Blue") => DwarfColor::Blue,
+            Ok("Red") => DwarfColor::Red,
+            Ok("Yellow") => DwarfColor::Yellow,
+            Ok("Purple") => DwarfColor::Purple,
+            _ => DwarfColor::Blue,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -126,13 +208,30 @@ pub enum DwarfResource {
     Gold,  // only with shovel, pickaxe
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, Component, PartialEq, Eq, Debug, Default, Reflect)]
 pub enum DwarfTool {
+    #[default]
     BareHands,
     MultiTool,
     Shovel,
     Pickaxe,
     Dynamite,
+}
+
+impl DwarfTool {
+    pub fn from_field(entity_instance: &EntityInstance) -> Self {
+        match entity_instance
+            .get_enum_field("DwarfTool")
+            .map(String::as_str)
+        {
+            Ok("BareHands") => DwarfTool::BareHands,
+            Ok("MultiTool") => DwarfTool::MultiTool,
+            Ok("Shovel") => DwarfTool::Shovel,
+            Ok("Pickaxe") => DwarfTool::Pickaxe,
+            Ok("Dynamite") => DwarfTool::Dynamite,
+            _ => DwarfTool::BareHands,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -160,8 +259,10 @@ pub struct DwarfCharacter {
     move_distance: f32, // distance moved in current Moving action
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Traps {
+#[derive(Component, Debug, Default, Clone, PartialEq, Eq)]
+pub enum TrapType {
+    #[default]
+    Nothing,
     Up,
     Left,
     Down,
@@ -170,21 +271,41 @@ pub enum Traps {
     Rock,
 }
 
-impl TryFrom<String> for Traps {
-    type Error = &'static str;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+impl From<&String> for TrapType {
+    fn from(value: &String) -> Self {
         match value.as_str() {
-            "Up" => Ok(Traps::Up),
-            "Down" => Ok(Traps::Down),
-            "Left" => Ok(Traps::Left),
-            "Right" => Ok(Traps::Right),
-            "Catapult" => Ok(Traps::Catapult),
-            "Rock" => Ok(Traps::Rock),
-            _ => Err("Unknown trap"),
+            "Up" => TrapType::Up,
+            "Down" => TrapType::Down,
+            "Left" => TrapType::Left,
+            "Right" => TrapType::Right,
+            "Catapult" => TrapType::Catapult,
+            "Rock" => TrapType::Rock,
+            _ => TrapType::Nothing,
+        }
+    }
+}
+
+impl TrapType {
+    fn from_field(entity_instance: &EntityInstance) -> Self {
+        if let Ok(trap_name) = entity_instance.get_enum_field("DwarfTool") {
+            trap_name.into()
+        } else {
+            TrapType::Nothing
+        }
+    }
+
+    pub fn get_tileset_offset(&self) -> (f32, f32) {
+        match self {
+            TrapType::Up => (0.0, 2.0),
+            TrapType::Left => (2.0, 2.0),
+            TrapType::Down => (1.0, 2.0),
+            TrapType::Right => (3.0, 2.0),
+            TrapType::Catapult => (0.0, 0.0),
+            TrapType::Rock => (1.0, 0.0),
+            TrapType::Nothing => (27.0, 0.0),
         }
     }
 }
 
 #[derive(Debug, Resource)]
-pub struct Hand(Vec<(Traps, u32)>);
+pub struct Hand(Vec<(TrapType, u32)>);
