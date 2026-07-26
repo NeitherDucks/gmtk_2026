@@ -11,7 +11,7 @@ use crate::{
     asset_loading::AssetHandles,
     gamemodes::{
         ActionsRequested, ChestTag, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection,
-        DwarfResource, DwarfTool, Hand, LevelChests, LevelWalls, TrapType, WallTag,
+        DwarfResource, DwarfTool, Hand, LevelChests, LevelWalls, Trap, TrapType, WallTag,
         dwarf::{clone_dwarf_body_animation, clone_dwarf_parts_animation},
     },
 };
@@ -32,6 +32,7 @@ impl Plugin for LoadingGameModePlugin {
                     cache_chest_locations,
                     center_camera_to_level,
                     get_hand,
+                    handle_level_loaded,
                 )
                     .run_if(in_state(LevelState::Loading)),
             );
@@ -187,30 +188,26 @@ pub fn get_hand(
                 .get_raw_level_by_iid(level_iid.get())
                 .expect("spawned level should exist in project");
 
-            let mut traps = Vec::<TrapType>::new();
-            let mut amounts = Vec::<u32>::new();
+            info!("Loading player's hand");
 
-            for field in &level.field_instances {
-                match &field.value {
-                    FieldValue::Enums(values) => {
-                        traps = values
-                            .iter()
-                            .cloned()
-                            .filter_map(|v| v.map(|v| (&v).into()))
-                            .collect();
-                    }
-                    FieldValue::Ints(values) => {
-                        amounts = values
-                            .iter()
-                            .cloned()
-                            .filter_map(|v| v.map(|v| v as u32))
-                            .collect();
-                    }
-                    _ => {}
-                }
-            }
+            let traps = level
+                .get_maybe_enums_field("HandTraps")
+                .unwrap_or_default()
+                .iter()
+                .flatten()
+                .map(TrapType::from)
+                .collect::<Vec<TrapType>>();
+            let amounts = level
+                .get_maybe_ints_field("HandAmount")
+                .unwrap_or_default()
+                .iter()
+                .flatten()
+                .cloned()
+                .map(|a| a as u32)
+                .collect::<Vec<u32>>();
 
             let hand = traps.into_iter().zip(amounts).collect();
+            info!("Player's hand: {hand:?}");
             commands.insert_resource(Hand(hand));
         }
     }
@@ -241,6 +238,20 @@ pub fn center_camera_to_level(
             );
 
             camera.translation += offset.extend(0.0);
+        }
+    }
+}
+
+pub fn handle_level_loaded(
+    mut level_messages: MessageReader<LevelEvent>,
+    mut next_state: ResMut<NextState<LevelState>>,
+) {
+    for level_event in level_messages.read() {
+        if let LevelEvent::Transformed(level_iid) = level_event {
+            info!("Level with IID {} is completely loaded!", level_iid);
+
+            // post-load logic, like moving to the editing_ui
+            next_state.set(LevelState::Editing);
         }
     }
 }
