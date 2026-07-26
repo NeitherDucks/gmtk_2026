@@ -1,17 +1,13 @@
-#![allow(unused)]
-
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
-use bevy_ecs_ldtk::ldtk::loaded_level::*;
 use bevy_ecs_ldtk::prelude::*;
-use std::collections::HashSet;
 
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
     gamemodes::{
         ActionsRequested, ChestTag, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection,
-        DwarfResource, DwarfTool, Hand, LevelChests, LevelWalls, TrapType, WallTag,
+        DwarfResource, DwarfTool, Hand, LevelChests, LevelWalls, TrapType,
         dwarf::{clone_dwarf_body_animation, clone_dwarf_parts_animation},
     },
 };
@@ -22,19 +18,21 @@ pub struct LoadingGameModePlugin;
 
 impl Plugin for LoadingGameModePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LevelState::Loading), setup)
-            .add_systems(
-                Update,
-                (
-                    //process_map_extras,
-                    get_level_size,
-                    cache_wall_locations,
-                    cache_chest_locations,
-                    center_camera_to_level,
-                    get_hand,
-                )
-                    .run_if(in_state(LevelState::Loading)),
-            );
+        app.add_systems(OnEnter(LevelState::Loading), setup);
+        app.add_systems(
+            Update,
+            (
+                //process_map_extras,
+                get_level_size,
+                cache_wall_locations,
+                cache_chest_locations,
+                center_camera_to_level,
+                get_hand,
+                translate_grid_coords_entities,
+                handle_level_loaded,
+            )
+                .run_if(in_state(LevelState::Loading)),
+        );
     }
 }
 
@@ -111,33 +109,15 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
     commands.insert_resource(dwarf);
 }
 
-// I'm not sure of the differences between how to register/spawn-bundle-from tiles or placed entities, but for
-// entities one would use the LdtkEntity registration on a bundle,
-// e.g., Bundle (InteractibleEntity, ExactEntityName("Chest"), Chest(contents=RedPotion LdtkEntity), Lock(unlock_entity=SilverKey LdtkEntity))
-// as in the field_instances example.
-
-// Components:
-// InteractibleEntity -- indicates something a dwarf would interact with
-// ExactEntityName(namehash=hash("Silver Key")) -- or some way to get the entity's "type"
-// Tool(type: DwarfTool) -- marks that the interactible entity is a type of tool
-// DirectionChanger(dir: DwarfDirection) -- marks that the interactible entity is a direction-changer arrow
-// Chest(contents: Option<EntityID>) -- marks that the interactible entity is a chest (with possible contents of an entity)
-// Lock(unlock_entity: e.g., SILVER_KEY) -- marks that the Chest/Door is secured by a certain unlock_entity
-
-// Other:
-// register (invisible) Wall entities; cache them like before
-// registered DwarfStart LdtkEntity (marker component) bundle, with DwarfColor, DwarfDirection, and DwarfTool components
-// registered Door LdtkEntity which may also have a Lock component on it
-
 pub fn get_level_size(
     mut level_walls: ResMut<LevelWalls>,
     mut level_messages: MessageReader<LevelEvent>,
-    walls: Query<&GridCoords, With<WallTag>>,
     ldtk_project_entities: Single<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
 ) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
+            info!("get_level_size saw LevelEvent::Spawned for the level");
             let ldtk_project = ldtk_project_assets
                 .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
@@ -152,10 +132,10 @@ pub fn get_level_size(
 }
 
 pub fn cache_wall_locations(
-    query: Query<(Entity, &GridCoords, &TileEnumTags), Added<TileEnumTags>>,
+    query: Query<(&GridCoords, &TileEnumTags), Added<TileEnumTags>>,
     mut level_walls: ResMut<LevelWalls>,
 ) {
-    for (entity, coords, tag) in query {
+    for (coords, tag) in query {
         if tag.tags.contains(&"Wall".to_string()) {
             level_walls.wall_locations.insert(*coords);
         }
@@ -180,6 +160,7 @@ pub fn get_hand(
 ) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
+            info!("get_hand saw LevelEvent::Spawned for the level");
             let ldtk_project = ldtk_project_assets
                 .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
@@ -224,6 +205,7 @@ pub fn center_camera_to_level(
 ) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
+            info!("center_camera_to_level saw LevelEvent::Spawned for the level");
             let ldtk_project = ldtk_project_assets
                 .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
@@ -242,5 +224,29 @@ pub fn center_camera_to_level(
 
             camera.translation += offset.extend(0.0);
         }
+    }
+}
+
+pub fn handle_level_loaded(
+    mut level_messages: MessageReader<LevelEvent>,
+    mut next_level_state: ResMut<NextState<LevelState>>,
+) {
+    for level_event in level_messages.read() {
+        if let LevelEvent::Transformed(level_iid) = level_event {
+            info!("Level with IID {} is completely loaded!", level_iid);
+
+            // post-load logic, like moving to the editing_ui
+            next_level_state.set(LevelState::Editing);
+        }
+    }
+}
+
+pub fn translate_grid_coords_entities(
+    mut grid_coords_entities: Query<(&mut Transform, &GridCoords), Changed<GridCoords>>,
+) {
+    for (mut transform, grid_coords) in grid_coords_entities.iter_mut() {
+        transform.translation =
+            bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(TILE_SIZE))
+                .extend(transform.translation.z);
     }
 }

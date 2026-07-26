@@ -69,8 +69,6 @@ pub struct ChestTag;
 #[derive(Default, Resource, Debug)]
 pub struct LevelChests {
     chest_locations: HashSet<GridCoords>,
-    // level_width: i32,
-    // level_height: i32,
 }
 
 impl LevelChests {

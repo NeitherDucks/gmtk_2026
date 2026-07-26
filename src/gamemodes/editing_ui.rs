@@ -24,7 +24,7 @@ impl Plugin for EditingUIGameModePlugin {
     }
 }
 
-pub fn setup_ui(mut commands: Commands) {
+pub fn setup_ui(mut commands: Commands, hand: Res<Hand>) {
     commands.queue_spawn_scene(bsn! {
         EditingLevelTag
         Node {
@@ -43,6 +43,7 @@ pub fn setup_ui(mut commands: Commands) {
                 justify_content: JustifyContent::Center,
             }
             Children [
+                { ui_from_hand(&hand) },
                 play_button(),
             ]
         ]
@@ -57,28 +58,20 @@ pub fn update_hand_ui(
 ) {
     commands.entity(*hand_bar).despawn_children();
 
-    let mut new_entities = Vec::new();
-    for (trap, amount) in &hand.0 {
-        new_entities.push(
-            commands
-                .queue_spawn_scene(bsn! {
-                    item_button(trap.clone(), *amount)
-                })
-                .id(),
+    commands
+        .entity(*hand_bar)
+        .queue_spawn_related_scenes::<Children>(
+            bsn_list! { {ui_from_hand(&hand) }, play_button() },
         );
-    }
-
-    new_entities.push(
-        commands
-            .queue_spawn_scene(bsn! {
-                play_button()
-            })
-            .id(),
-    );
-
-    commands.entity(*hand_bar).add_children(&new_entities);
 }
 
-// pub fn cleanup_ui(mut commands: Commands, entity: Single<Entity, With<EditingLevelTag>>) {
-//     commands.entity(*entity).despawn();
-// }
+fn ui_from_hand(hand: &Res<Hand>) -> impl SceneList {
+    hand.0
+        .iter()
+        .map(|(trap, amount)| {
+            bsn! {
+                item_button(trap.clone(), *amount)
+            }
+        })
+        .collect::<Vec<_>>()
+}
