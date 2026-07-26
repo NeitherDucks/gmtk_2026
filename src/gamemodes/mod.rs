@@ -18,7 +18,9 @@ impl Plugin for GameModesPlugin {
             .register_type::<DwarfColor>()
             .register_type::<DwarfTool>()
             .register_type::<ChestLoot>()
+            .register_type::<DoorLock>()
             .register_ldtk_entity::<Chest>("Chest")
+            .register_ldtk_entity::<Door>("Door")
             .register_ldtk_entity::<StartingPoint>("StartingPoint")
             .register_ldtk_entity::<Trap>("Trap")
             .insert_resource(LdtkSettings {
@@ -78,6 +80,20 @@ impl LevelChests {
 }
 
 #[derive(Bundle, LdtkEntity, Default)]
+pub struct Door {
+    #[sprite_sheet]
+    sprite: Sprite,
+    #[grid_coords]
+    grid_coords: GridCoords,
+    tag: DoorTag,
+    #[with(DoorLock::from_field)]
+    locked: DoorLock,
+}
+
+#[derive(Component, Default)]
+pub struct DoorTag;
+
+#[derive(Bundle, LdtkEntity, Default)]
 pub struct StartingPoint {
     #[grid_coords]
     grid_coords: GridCoords,
@@ -127,6 +143,24 @@ impl From<&String> for Item {
             "SmallBluePotion" => Self::SmallBluePotion,
             "LargeBluePotion" => Self::LargeBluePotion,
             _ => Self::None,
+        }
+    }
+}
+
+#[derive(Component, Default, Reflect, PartialEq, Eq)]
+pub enum DoorLock {
+    #[default]
+    Unlocked,
+    Silver,
+    Gold,
+}
+
+impl DoorLock {
+    pub fn from_field(entity_instance: &EntityInstance) -> Self {
+        match entity_instance.get_enum_field("Locked").map(String::as_str) {
+            Ok("Silver") => Self::Silver,
+            Ok("Gold") => Self::Gold,
+            _ => Self::Unlocked,
         }
     }
 }

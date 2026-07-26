@@ -1018,6 +1018,31 @@
 							],
 							"__worldX": 240,
 							"__worldY": 16
+						},
+						{
+							"__identifier": "Door",
+							"__grid": [13,13],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": { "tilesetUid": 4, "x": 128, "y": 48, "w": 16, "h": 16 },
+							"__smartColor": "#E4A672",
+							"iid": "66e5da00-6fc0-11f1-a884-6b8d3090d1b2",
+							"width": 16,
+							"height": 16,
+							"defUid": 33,
+							"px": [208,208],
+							"fieldInstances": [
+								{ "__identifier": "DoorType", "__type": "LocalEnum.DoorType", "__value": "Floor", "__tile": { "tilesetUid": 4, "x": 128, "y": 48, "w": 16, "h": 16 }, "defUid": 35, "realEditorValues": [{
+									"id": "V_String",
+									"params": ["Floor"]
+								}] },
+								{ "__identifier": "Locked", "__type": "LocalEnum.Locked", "__value": "Gold", "__tile": null, "defUid": 36, "realEditorValues": [{
+									"id": "V_String",
+									"params": ["Gold"]
+								}] }
+							],
+							"__worldX": 208,
+							"__worldY": 208
 						}
 					]
 				},
