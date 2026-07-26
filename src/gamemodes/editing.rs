@@ -172,7 +172,7 @@ pub fn update_inputs(
     } else if mouse.just_released(MouseButton::Left) {
         // Grab the coords
         let Some(coord) = coord.0 else {
-            // If there isn't (outside play area or window) we cancel placement
+            // If there is no coords (outside play area or window), we cancel placement
             commands.remove_resource::<PlacingTrap>();
             return;
         };
@@ -206,7 +206,7 @@ pub fn update_inputs(
                 Transform::from_translation(position.extend(4.0)),
             ));
 
-            // If we don't have any trap of that type, stop placing
+            // If we don't have any more trap of that type, stop placing
             if remainder == 0 {
                 commands.remove_resource::<PlacingTrap>();
             }
