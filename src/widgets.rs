@@ -86,10 +86,10 @@ pub fn item_button(item: TrapType, amount: u32) -> impl Scene {
     });
 
     let (x, y) = match item {
-        TrapType::Up => (0.0, 2.0),
-        TrapType::Left => (2.0, 2.0),
-        TrapType::Down => (1.0, 2.0),
-        TrapType::Right => (3.0, 2.0),
+        TrapType::Up => (8.0, 2.0),
+        TrapType::Left => (11.0, 2.0),
+        TrapType::Down => (9.0, 2.0),
+        TrapType::Right => (10.0, 2.0),
         TrapType::Catapult => (0.0, 0.0),
         TrapType::Rock => (1.0, 0.0),
         TrapType::Nothing => (27.0, 0.0),
