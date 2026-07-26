@@ -4,6 +4,7 @@
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
 pub mod asset_loading;
+pub mod entities;
 pub mod gamemodes;
 pub mod menus;
 pub mod widgets;
@@ -88,6 +89,7 @@ fn main() -> AppExit {
             asset_loading::LoadingPlugin,
             menus::MenuPlugin,
             gamemodes::GameModesPlugin,
+            entities::EntitiesPlugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(OnExit(GameState::LoadingAssets), post_load_setup);

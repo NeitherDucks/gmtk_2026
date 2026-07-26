@@ -1,6 +1,6 @@
 use bevy::{prelude::*, text::FontSourceTemplate};
 
-use crate::{LevelState, gamemodes::TrapType};
+use crate::{LevelState, entities::traptype::TrapType};
 
 const ITEM_BUTTON_DISABLED: Rect = Rect {
     min: Vec2 { x: 192.0, y: 96.0 },

@@ -5,9 +5,11 @@ use bevy_ecs_ldtk::prelude::*;
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
+    entities::chest::ChestTag,
+    entities::traptype::TrapType,
     gamemodes::{
-        ActionsRequested, ChestTag, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection,
-        DwarfResource, DwarfTool, Hand, LevelChests, LevelWalls, TrapType,
+        ActionsRequested, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection, DwarfResource,
+        DwarfTool, Hand, LevelChests, LevelWalls,
         dwarf::{clone_dwarf_body_animation, clone_dwarf_parts_animation},
     },
 };
@@ -18,21 +20,20 @@ pub struct LoadingGameModePlugin;
 
 impl Plugin for LoadingGameModePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LevelState::Loading), setup)
-            .add_systems(
-                Update,
-                (
-                    //process_map_extras,
-                    get_level_size,
-                    cache_wall_locations,
-                    cache_chest_locations,
-                    center_camera_to_level,
-                    get_hand,
-                    translate_grid_coords_entities,
-                    handle_level_loaded,
-                )
-                    .run_if(in_state(LevelState::Loading)),
-            );
+        app.add_systems(OnEnter(LevelState::Loading), setup);
+        app.add_systems(
+            Update,
+            (
+                get_level_size,
+                cache_wall_locations,
+                cache_chest_locations,
+                center_camera_to_level,
+                get_hand,
+                translate_grid_coords_entities,
+                handle_level_loaded,
+            )
+                .run_if(in_state(LevelState::Loading)),
+        );
     }
 }
 
