@@ -85,26 +85,7 @@ pub fn item_button(item: TrapType, amount: u32) -> impl Scene {
         ITEM_BUTTON_DISABLED
     });
 
-    let (x, y) = match item {
-        TrapType::Up => (8.0, 2.0),
-        TrapType::Left => (11.0, 2.0),
-        TrapType::Down => (9.0, 2.0),
-        TrapType::Right => (10.0, 2.0),
-        TrapType::Catapult => (0.0, 0.0),
-        TrapType::Rock => (1.0, 0.0),
-        TrapType::Nothing => (27.0, 0.0),
-    };
-
-    let icon_rect = Some(Rect {
-        min: Vec2 {
-            x: x * 32.0,
-            y: y * 32.0,
-        },
-        max: Vec2 {
-            x: (x + 1.0) * 32.0,
-            y: (y + 1.0) * 32.0,
-        },
-    });
+    let icon_rect = Some(item.get_rect());
 
     let color = if amount > 0 {
         Color::WHITE

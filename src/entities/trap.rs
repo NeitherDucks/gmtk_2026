@@ -5,12 +5,12 @@ use bevy_ecs_ldtk::prelude::*;
 #[derive(Bundle, LdtkEntity, Default)]
 pub struct Trap {
     #[sprite_sheet]
-    sprite: Sprite,
+    pub sprite: Sprite,
     #[grid_coords]
-    grid_coords: GridCoords,
-    tag: TrapTag,
+    pub grid_coords: GridCoords,
+    pub tag: TrapTag,
     #[with(TrapType::from_field)]
-    trap: TrapType,
+    pub trap: TrapType,
 }
 
 #[derive(Default, Component)]

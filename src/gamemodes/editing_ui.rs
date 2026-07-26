@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     LevelState,
-    gamemodes::Hand,
+    gamemodes::{Hand, editing::PlacingTrap},
     widgets::{item_button, play_button},
 };
 
@@ -69,8 +69,21 @@ fn ui_from_hand(hand: &Res<Hand>) -> impl SceneList {
     hand.0
         .iter()
         .map(|(trap, amount)| {
+            let a = *amount;
+            let t = *trap;
             bsn! {
-                item_button(trap.clone(), *amount)
+                item_button(*trap, *amount)
+                on(move |_: On<Pointer<Click>>, mut commands: Commands, placing: Option<Res<PlacingTrap>>| {
+                    if a == 0 {
+                        return;
+                    }
+
+                    if let Some(placing) = placing && placing.0 == t {
+                        return;
+                    }
+
+                    commands.insert_resource(PlacingTrap(t));
+                })
             }
         })
         .collect::<Vec<_>>()

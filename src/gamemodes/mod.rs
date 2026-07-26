@@ -1,7 +1,9 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+
+use crate::entities::traptype::TrapType;
 
 pub mod dwarf;
 mod editing;
@@ -35,6 +37,35 @@ impl Plugin for GameModesPlugin {
 #[derive(Default, Component)]
 pub struct GoalTag;
 
+#[derive(Debug)]
+pub enum Item {
+    Wall,
+    Chest,
+    Trap((Entity, TrapType)),
+    Dwarf,
+    Door,
+}
+
+#[derive(Default, Resource, Debug)]
+pub struct Grid {
+    items: HashMap<GridCoords, Item>,
+    width: i32,
+    height: i32,
+}
+
+impl Grid {
+    pub fn is_outside_level(&self, grid_coords: &GridCoords) -> bool {
+        grid_coords.x < 0
+            || grid_coords.y < 0
+            || grid_coords.x >= self.width
+            || grid_coords.y >= self.height
+    }
+
+    pub fn is_collision(&self, grid_coords: &GridCoords) -> bool {
+        self.is_outside_level(grid_coords) || self.items.contains_key(grid_coords)
+    }
+}
+
 #[derive(Default, Resource, Debug)]
 pub struct LevelWalls {
     wall_locations: HashSet<GridCoords>,
@@ -63,12 +94,28 @@ impl LevelChests {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Component, Clone, Copy, PartialEq, Debug, Default)]
 pub enum DwarfDirection {
     Up,
     Down,
     Left,
+    #[default]
     Right,
+}
+
+impl DwarfDirection {
+    pub fn from_field(entity_instance: &EntityInstance) -> Self {
+        match entity_instance
+            .get_enum_field("DwarfColor")
+            .map(String::as_str)
+        {
+            Ok("Up") => Self::Up,
+            Ok("Down") => Self::Down,
+            Ok("Left") => Self::Left,
+            Ok("Right") => Self::Right,
+            _ => Self::default(),
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -168,6 +215,31 @@ pub struct DwarfCharacter {
     move_distance: f32, // distance moved in current Moving action
 }
 
-use crate::entities::traptype::TrapType;
 #[derive(Debug, Resource)]
 pub struct Hand(Vec<(TrapType, u32)>);
+
+impl Hand {
+    pub fn increment(&mut self, trap: &TrapType) -> Option<u32> {
+        for (hand_trap, amount) in &mut self.0 {
+            if hand_trap == trap {
+                *amount = amount.saturating_add(1);
+
+                return Some(*amount);
+            }
+        }
+
+        None
+    }
+
+    pub fn decrement(&mut self, trap: &TrapType) -> Option<u32> {
+        for (hand_trap, amount) in &mut self.0 {
+            if hand_trap == trap {
+                *amount = amount.saturating_sub(1);
+
+                return Some(*amount);
+            }
+        }
+
+        None
+    }
+}

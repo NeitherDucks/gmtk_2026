@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+// use bevy::prelude::*;
 
-#[derive(Default, Component)]
-pub struct WallTag;
+// #[derive(Default, Component)]
+// pub struct WallTag;

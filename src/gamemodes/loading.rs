@@ -5,11 +5,12 @@ use bevy_ecs_ldtk::prelude::*;
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
-    entities::chest::ChestTag,
-    entities::traptype::TrapType,
+    entities::{
+        chest::ChestTag, door::DoorTag, startingpoint::StartingPointTag, traptype::TrapType,
+    },
     gamemodes::{
         ActionsRequested, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection, DwarfResource,
-        DwarfTool, Hand, LevelChests, LevelWalls,
+        DwarfTool, Grid, Hand, Item, LevelChests, LevelWalls,
         dwarf::{clone_dwarf_body_animation, clone_dwarf_parts_animation},
     },
 };
@@ -27,6 +28,7 @@ impl Plugin for LoadingGameModePlugin {
                 get_level_size,
                 cache_wall_locations,
                 cache_chest_locations,
+                cache_items_location,
                 center_camera_to_level,
                 get_hand,
                 translate_grid_coords_entities,
@@ -50,6 +52,8 @@ pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     commands.init_resource::<LevelWalls>();
     commands.init_resource::<LevelChests>();
     commands.init_resource::<ActionsRequested>();
+
+    commands.init_resource::<Grid>();
 
     spawn_initial_dwarf(commands.reborrow(), &handles);
 }
@@ -112,6 +116,7 @@ fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
 
 pub fn get_level_size(
     mut level_walls: ResMut<LevelWalls>,
+    mut grid: ResMut<Grid>,
     mut level_messages: MessageReader<LevelEvent>,
     ldtk_project_entities: Single<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
@@ -128,6 +133,9 @@ pub fn get_level_size(
 
             level_walls.level_width = level.px_wid / TILE_SIZE;
             level_walls.level_height = level.px_hei / TILE_SIZE;
+
+            grid.width = level.px_wid / TILE_SIZE;
+            grid.height = level.px_hei / TILE_SIZE;
         }
     }
 }
@@ -135,10 +143,39 @@ pub fn get_level_size(
 pub fn cache_wall_locations(
     query: Query<(&GridCoords, &TileEnumTags), Added<TileEnumTags>>,
     mut level_walls: ResMut<LevelWalls>,
+    mut grid: ResMut<Grid>,
 ) {
     for (coords, tag) in query {
         if tag.tags.contains(&"Wall".to_string()) {
             level_walls.wall_locations.insert(*coords);
+            grid.items.insert(*coords, Item::Wall);
+        }
+    }
+}
+
+pub fn cache_items_location(
+    mut grid: ResMut<Grid>,
+    query: Query<
+        (
+            Entity,
+            &GridCoords,
+            Option<&ChestTag>,
+            Option<&DoorTag>,
+            Option<&StartingPointTag>,
+            Option<&TrapType>,
+        ),
+        Added<GridCoords>,
+    >,
+) {
+    for (entity, coord, chest, door, start, trap) in &query {
+        if chest.is_some() {
+            grid.items.insert(*coord, Item::Chest);
+        } else if door.is_some() {
+            grid.items.insert(*coord, Item::Door);
+        } else if start.is_some() {
+            grid.items.insert(*coord, Item::Dwarf);
+        } else if let Some(trap) = trap {
+            grid.items.insert(*coord, Item::Trap((entity, *trap)));
         }
     }
 }

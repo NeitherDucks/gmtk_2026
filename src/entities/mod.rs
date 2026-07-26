@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 
 pub mod chest;
-mod door;
+pub mod door;
 mod item;
 mod lock;
-mod startingpoint;
-mod trap;
+pub mod startingpoint;
+pub mod trap;
 pub mod traptype;
 mod wall;
 

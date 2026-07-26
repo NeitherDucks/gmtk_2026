@@ -12,6 +12,8 @@ pub struct StartingPoint {
     color: DwarfColor,
     #[with(DwarfTool::from_field)]
     tool: DwarfTool,
+    #[with(DwarfDirection::from_field)]
+    direction: DwarfDirection,
 }
 
 #[derive(Default, Component)]
