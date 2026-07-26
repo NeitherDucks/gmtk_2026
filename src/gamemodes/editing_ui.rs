@@ -8,10 +8,10 @@ use crate::{
 };
 
 #[derive(Component, Default, Clone)]
-pub struct EditingLevelTag;
+struct EditingLevelTag;
 
 #[derive(Component, Default, Clone)]
-pub struct HandBarTag;
+struct HandBarTag;
 
 pub struct EditingUIGameModePlugin;
 
@@ -25,7 +25,7 @@ impl Plugin for EditingUIGameModePlugin {
     }
 }
 
-pub fn setup_ui(mut commands: Commands, hand: Res<Hand>) {
+fn setup_ui(mut commands: Commands, hand: Res<Hand>) {
     commands.queue_spawn_scene(bsn! {
         EditingLevelTag
         Node {
@@ -52,7 +52,7 @@ pub fn setup_ui(mut commands: Commands, hand: Res<Hand>) {
 }
 
 /// Rebuilds the hand ui when the hand resource is changed
-pub fn update_hand_ui(
+fn update_hand_ui(
     mut commands: Commands,
     hand: Res<Hand>,
     hand_bar: Single<Entity, With<HandBarTag>>,
