@@ -504,10 +504,7 @@
 					"max": null,
 					"regex": null,
 					"acceptFileTypes": null,
-					"defaultOverride": {
-						"id": "V_String",
-						"params": ["Wall"]
-					},
+					"defaultOverride": null,
 					"textLanguageMode": null,
 					"symmetricalRef": false,
 					"autoChainRef": true,
@@ -520,7 +517,7 @@
 				{
 					"identifier": "Locked",
 					"doc": null,
-					"__type": "LocalEnum.Locked",
+					"__type": "LocalEnum.Lock",
 					"uid": 36,
 					"type": "F_Enum(32)",
 					"isArray": false,
@@ -645,12 +642,24 @@
 			{ "id": "Left", "tileRect": null, "color": 15389866 },
 			{ "id": "Right", "tileRect": null, "color": 14984818 }
 		], "iconTilesetUid": null, "externalRelPath": null, "externalFileChecksum": null, "tags": [] },
-		{ "identifier": "Locked", "uid": 32, "values": [
+		{ "identifier": "Lock", "uid": 32, "values": [
 			{ "id": "Silver", "tileRect": null, "color": 9276813 },
 			{ "id": "Gold", "tileRect": null, "color": 12493104 },
 			{ "id": "Unlocked", "tileRect": null, "color": 16777215 }
 		], "iconTilesetUid": null, "externalRelPath": null, "externalFileChecksum": null, "tags": [] },
-		{ "identifier": "DoorType", "uid": 34, "values": [ { "id": "Wall", "tileRect": { "tilesetUid": 4, "x": 112, "y": 48, "w": 16, "h": 16 }, "color": 12470831 }, { "id": "Floor", "tileRect": { "tilesetUid": 4, "x": 128, "y": 48, "w": 16, "h": 16 }, "color": 14120515 } ], "iconTilesetUid": 4, "externalRelPath": null, "externalFileChecksum": null, "tags": [] }
+		{ "identifier": "DoorType", "uid": 34, "values": [
+			{ "id": "HorizontalWallLeftSquare", "tileRect": { "tilesetUid": 4, "x": 96, "y": 48, "w": 16, "h": 16 }, "color": 15389866 },
+			{ "id": "HorizontalWallRightSquare", "tileRect": { "tilesetUid": 4, "x": 112, "y": 48, "w": 16, "h": 16 }, "color": 12470831 },
+			{ "id": "Floor", "tileRect": { "tilesetUid": 4, "x": 128, "y": 48, "w": 16, "h": 16 }, "color": 14120515 },
+			{ "id": "LeftWallUp", "tileRect": { "tilesetUid": 4, "x": 112, "y": 64, "w": 16, "h": 16 }, "color": 14984818 },
+			{ "id": "LeftWallDown", "tileRect": { "tilesetUid": 4, "x": 112, "y": 80, "w": 16, "h": 16 }, "color": 7552569 },
+			{ "id": "HorizontalWallLeftRounded", "tileRect": { "tilesetUid": 4, "x": 96, "y": 96, "w": 16, "h": 16 }, "color": 4073265 },
+			{ "id": "HorizontalWallRightRounded", "tileRect": { "tilesetUid": 4, "x": 112, "y": 96, "w": 16, "h": 16 }, "color": 16690740 },
+			{ "id": "RightWallUp", "tileRect": { "tilesetUid": 4, "x": 128, "y": 64, "w": 16, "h": 16 }, "color": 16705377 },
+			{ "id": "RightWallDown", "tileRect": { "tilesetUid": 4, "x": 128, "y": 80, "w": 16, "h": 16 }, "color": 6539085 },
+			{ "id": "VerticalWallUp", "tileRect": { "tilesetUid": 4, "x": 96, "y": 64, "w": 16, "h": 16 }, "color": 4098376 },
+			{ "id": "VerticalWallDown", "tileRect": { "tilesetUid": 4, "x": 96, "y": 80, "w": 16, "h": 16 }, "color": 1199753 }
+		], "iconTilesetUid": 4, "externalRelPath": null, "externalFileChecksum": null, "tags": [] }
 	], "externalEnums": [], "levelFields": [
 		{
 			"identifier": "HandTraps",
@@ -991,8 +1000,11 @@
 							"defUid": 33,
 							"px": [144,0],
 							"fieldInstances": [
-								{ "__identifier": "DoorType", "__type": "LocalEnum.DoorType", "__value": "Wall", "__tile": { "tilesetUid": 4, "x": 112, "y": 48, "w": 16, "h": 16 }, "defUid": 35, "realEditorValues": [] },
-								{ "__identifier": "Locked", "__type": "LocalEnum.Locked", "__value": "Unlocked", "__tile": null, "defUid": 36, "realEditorValues": [] }
+								{ "__identifier": "DoorType", "__type": "LocalEnum.DoorType", "__value": "HorizontalWallRightSquare", "__tile": { "tilesetUid": 4, "x": 112, "y": 48, "w": 16, "h": 16 }, "defUid": 35, "realEditorValues": [{
+									"id": "V_String",
+									"params": ["HorizontalWallRightSquare"]
+								}] },
+								{ "__identifier": "Locked", "__type": "LocalEnum.Lock", "__value": "Unlocked", "__tile": null, "defUid": 36, "realEditorValues": [] }
 							],
 							"__worldX": 144,
 							"__worldY": 0
@@ -1002,7 +1014,7 @@
 							"__grid": [15,1],
 							"__pivot": [0,0],
 							"__tags": [],
-							"__tile": { "tilesetUid": 4, "x": 112, "y": 48, "w": 16, "h": 16 },
+							"__tile": { "tilesetUid": 4, "x": 112, "y": 64, "w": 16, "h": 16 },
 							"__smartColor": "#E4A672",
 							"iid": "83fc3d50-6fc0-11f1-a884-ddc58919734e",
 							"width": 16,
@@ -1010,8 +1022,11 @@
 							"defUid": 33,
 							"px": [240,16],
 							"fieldInstances": [
-								{ "__identifier": "DoorType", "__type": "LocalEnum.DoorType", "__value": "Wall", "__tile": { "tilesetUid": 4, "x": 112, "y": 48, "w": 16, "h": 16 }, "defUid": 35, "realEditorValues": [] },
-								{ "__identifier": "Locked", "__type": "LocalEnum.Locked", "__value": "Silver", "__tile": null, "defUid": 36, "realEditorValues": [{
+								{ "__identifier": "DoorType", "__type": "LocalEnum.DoorType", "__value": "LeftWallUp", "__tile": { "tilesetUid": 4, "x": 112, "y": 64, "w": 16, "h": 16 }, "defUid": 35, "realEditorValues": [{
+									"id": "V_String",
+									"params": ["LeftWallUp"]
+								}] },
+								{ "__identifier": "Locked", "__type": "LocalEnum.Lock", "__value": "Silver", "__tile": null, "defUid": 36, "realEditorValues": [{
 									"id": "V_String",
 									"params": ["Silver"]
 								}] }
@@ -1036,13 +1051,57 @@
 									"id": "V_String",
 									"params": ["Floor"]
 								}] },
-								{ "__identifier": "Locked", "__type": "LocalEnum.Locked", "__value": "Gold", "__tile": null, "defUid": 36, "realEditorValues": [{
+								{ "__identifier": "Locked", "__type": "LocalEnum.Lock", "__value": "Gold", "__tile": null, "defUid": 36, "realEditorValues": [{
 									"id": "V_String",
 									"params": ["Gold"]
 								}] }
 							],
 							"__worldX": 208,
 							"__worldY": 208
+						},
+						{
+							"__identifier": "Door",
+							"__grid": [8,0],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": { "tilesetUid": 4, "x": 96, "y": 48, "w": 16, "h": 16 },
+							"__smartColor": "#E4A672",
+							"iid": "a66fff40-6fc0-11f1-a884-a95fffc55b03",
+							"width": 16,
+							"height": 16,
+							"defUid": 33,
+							"px": [128,0],
+							"fieldInstances": [
+								{ "__identifier": "DoorType", "__type": "LocalEnum.DoorType", "__value": "HorizontalWallLeftSquare", "__tile": { "tilesetUid": 4, "x": 96, "y": 48, "w": 16, "h": 16 }, "defUid": 35, "realEditorValues": [{
+									"id": "V_String",
+									"params": ["HorizontalWallLeftSquare"]
+								}] },
+								{ "__identifier": "Locked", "__type": "LocalEnum.Lock", "__value": "Unlocked", "__tile": null, "defUid": 36, "realEditorValues": [] }
+							],
+							"__worldX": 128,
+							"__worldY": 0
+						},
+						{
+							"__identifier": "Door",
+							"__grid": [15,2],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": { "tilesetUid": 4, "x": 112, "y": 80, "w": 16, "h": 16 },
+							"__smartColor": "#E4A672",
+							"iid": "a92d98a0-6fc0-11f1-a884-a5b7e30731ac",
+							"width": 16,
+							"height": 16,
+							"defUid": 33,
+							"px": [240,32],
+							"fieldInstances": [
+								{ "__identifier": "DoorType", "__type": "LocalEnum.DoorType", "__value": "LeftWallDown", "__tile": { "tilesetUid": 4, "x": 112, "y": 80, "w": 16, "h": 16 }, "defUid": 35, "realEditorValues": [{
+									"id": "V_String",
+									"params": ["LeftWallDown"]
+								}] },
+								{ "__identifier": "Locked", "__type": "LocalEnum.Lock", "__value": "Unlocked", "__tile": null, "defUid": 36, "realEditorValues": [] }
+							],
+							"__worldX": 240,
+							"__worldY": 32
 						}
 					]
 				},

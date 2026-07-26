@@ -18,7 +18,7 @@ impl Plugin for GameModesPlugin {
             .register_type::<DwarfColor>()
             .register_type::<DwarfTool>()
             .register_type::<ChestLoot>()
-            .register_type::<DoorLock>()
+            .register_type::<Lock>()
             .register_ldtk_entity::<Chest>("Chest")
             .register_ldtk_entity::<Door>("Door")
             .register_ldtk_entity::<StartingPoint>("StartingPoint")
@@ -86,8 +86,10 @@ pub struct Door {
     #[grid_coords]
     grid_coords: GridCoords,
     tag: DoorTag,
-    #[with(DoorLock::from_field)]
-    locked: DoorLock,
+    #[with(DoorType::from_field)]
+    door_type: DoorType,
+    #[with(Lock::from_field)]
+    locked: Lock,
 }
 
 #[derive(Component, Default)]
@@ -148,16 +150,54 @@ impl From<&String> for Item {
 }
 
 #[derive(Component, Default, Reflect, PartialEq, Eq)]
-pub enum DoorLock {
+pub enum DoorType {
+    #[default]
+    HorizontalWallLeftSquare,
+    HorizontalWallRightSquare,
+    HorizontalWallLeftRounded,
+    HorizontalWallRightRounded,
+    VerticalWallUp,
+    VerticalWallDown,
+    LeftWallUp,
+    LeftWallDown,
+    RightWallUp,
+    RightWallDown,
+    Floor,
+}
+
+impl DoorType {
+    pub fn from_field(entity_instance: &EntityInstance) -> Self {
+        match entity_instance
+            .get_enum_field("DoorType")
+            .map(String::as_str)
+        {
+            Ok("HorizontalWallLeftSquare") => Self::HorizontalWallLeftSquare,
+            Ok("HorizontalWallRightSquare") => Self::HorizontalWallRightSquare,
+            Ok("HorizontalWallLeftRounded") => Self::HorizontalWallLeftRounded,
+            Ok("HorizontalWallRightRounded") => Self::HorizontalWallRightRounded,
+            Ok("VerticalWallUp") => Self::VerticalWallUp,
+            Ok("VerticalWallDown") => Self::VerticalWallDown,
+            Ok("LeftWallUp") => Self::LeftWallUp,
+            Ok("LeftWallDown") => Self::LeftWallDown,
+            Ok("RightWallUp") => Self::RightWallUp,
+            Ok("RightWallDown") => Self::RightWallDown,
+            Ok("Floor") => Self::Floor,
+            _ => Self::default(),
+        }
+    }
+}
+
+#[derive(Component, Default, Reflect, PartialEq, Eq)]
+pub enum Lock {
     #[default]
     Unlocked,
     Silver,
     Gold,
 }
 
-impl DoorLock {
+impl Lock {
     pub fn from_field(entity_instance: &EntityInstance) -> Self {
-        match entity_instance.get_enum_field("Locked").map(String::as_str) {
+        match entity_instance.get_enum_field("Lock").map(String::as_str) {
             Ok("Silver") => Self::Silver,
             Ok("Gold") => Self::Gold,
             _ => Self::Unlocked,
