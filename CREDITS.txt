@@ -1,0 +1,24 @@
+
+Credits
+
+Code & Design
+NeitherDucks - neitherducks.itch.io
+targrub - targames.itch.io
+
+Audio
+Mariano Mendez - marianomendezb.itch.io
+
+Assets
+https://vegaboo.itch.io/pixel-dwarfs (https://creativecommons.org/publicdomain/zero/1.0/)
+https://pixel-poem.itch.io/dungeon-assetpuck ("LICENCE: This asset pack can be used in free and commercial projects. You can modify it to suit your own needs.")
+https://free-game-assets.itch.io/free-pixel-art-dungeon-objects-asset-pack (https://craftpix.net/file-licenses/ Freebie Products)
+
+
+Tools Used
+Visual Studio Code, GitKraken, Aseprite, LDtk, [mariano's tools used], [NeitherDucks's tools used]
+
+Generative AI was not used for code or assets.
+
+Crates Used
+bevy (https://github.com/bevyengine/bevy) (MIT)
+bevy_ecs_ldtk (https://github.com/trouv/bevy_ecs_ldtk/) (MIT)
