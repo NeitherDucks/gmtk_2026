@@ -2,7 +2,8 @@ use bevy::prelude::*;
 
 use crate::{
     LevelState,
-    gamemodes::{Hand, editing::PlacingTrap},
+    gamemodes::editing::PlacingTrap,
+    gamemodes::hand::Hand,
     widgets::{item_button, play_button},
 };
 

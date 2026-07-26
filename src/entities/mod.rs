@@ -1,13 +1,21 @@
 use bevy::prelude::*;
 
-pub mod chest;
-pub mod door;
+mod chest;
+mod door;
 mod item;
 mod lock;
-pub mod startingpoint;
-pub mod trap;
-pub mod traptype;
+mod startingpoint;
+mod trap;
+mod traptype;
 mod wall;
+mod goal;
+
+pub use chest::ChestTag;
+pub use door::DoorTag;
+pub use startingpoint::StartingPointTag;
+pub use trap::{Trap, TrapTag};
+pub use traptype::TrapType;
+pub use goal::GoalTag;
 
 use chest::ChestEntityPlugin;
 use door::DoorEntityPlugin;

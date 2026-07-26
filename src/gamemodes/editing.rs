@@ -1,12 +1,14 @@
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
-    entities::trap::Trap,
-    gamemodes::{Grid, Hand, Item, TrapType},
+    entities::Trap,
+    gamemodes::{Grid, Item},
+    gamemodes::hand::Hand,
+    entities::TrapType,
+    entities::TrapTag,
 };
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::GridCoords;
-// use bevy_ecs_ldtk::ldtk::LayerInstance;
 
 const GRID_SIZE: i32 = 16;
 
@@ -199,7 +201,7 @@ pub fn update_inputs(
                 Trap {
                     sprite: sprite_from_trap_type(trap.0, &handles),
                     grid_coords: coord,
-                    tag: crate::entities::trap::TrapTag,
+                    tag: TrapTag,
                     trap: trap.0,
                 },
                 PlacedTrap,

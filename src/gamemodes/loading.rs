@@ -6,12 +6,13 @@ use crate::{
     LevelState,
     asset_loading::AssetHandles,
     entities::{
-        chest::ChestTag, door::DoorTag, startingpoint::StartingPointTag, traptype::TrapType,
+        ChestTag, DoorTag, StartingPointTag, TrapType,
     },
     gamemodes::{
         ActionsRequested, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection, DwarfResource,
-        DwarfTool, Grid, Hand, Item, LevelChests, LevelWalls,
+        DwarfTool, Grid, Item, LevelChests, LevelWalls,
         dwarf::{clone_dwarf_body_animation, clone_dwarf_parts_animation},
+        hand::Hand,
     },
 };
 

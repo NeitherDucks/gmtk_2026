@@ -1,6 +1,6 @@
-use crate::entities::item::*;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+use crate::entities::item::Item;
 
 /// Bundle to use for the "Chest" LdtkEntity
 #[derive(Bundle, LdtkEntity, Default)]
