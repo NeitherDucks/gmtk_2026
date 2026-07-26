@@ -6,7 +6,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bevy = { version = "0.19", default-features = false, features = ["2d", "audio", "ui"] }
+bevy = { version = "0.19", default-features = false, features = ["2d", "audio", "ui", "wav"] }
 
 bevy_enhanced_input = "0.26.0"
 bevy_tweening = "0.16.0"

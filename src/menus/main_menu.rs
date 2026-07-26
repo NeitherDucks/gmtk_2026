@@ -1,14 +1,18 @@
-use bevy::prelude::*;
+use bevy::{audio::Volume, prelude::*};
 
 use crate::{
     GameState,
+    asset_loading::AssetHandles,
     widgets::{fancy_pane, menu_button},
 };
 
 #[derive(Component, Default, Clone)]
 pub struct MainMenuTag;
 
-pub fn setup(mut commands: Commands) {
+#[derive(Component, Default, Clone)]
+pub struct MainMenuMusicTag;
+
+pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     commands.queue_spawn_scene(bsn! {
         MainMenuTag
         Node {
@@ -77,6 +81,16 @@ pub fn setup(mut commands: Commands) {
             ]
         ]
     });
+
+    commands.spawn((
+        MainMenuMusicTag,
+        AudioPlayer::new(handles.music.clone()),
+        PlaybackSettings {
+            mode: bevy::audio::PlaybackMode::Loop,
+            volume: Volume::Decibels(-2.0),
+            ..Default::default()
+        },
+    ));
 }
 
 pub fn cleanup(mut commands: Commands, entity: Single<Entity, With<MainMenuTag>>) {

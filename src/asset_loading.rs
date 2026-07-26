@@ -59,6 +59,8 @@ asset_handles! {
     icons: Handle<Image> = "ui/icons.png",
     test_level: LdtkProjectHandle = "test.ldtk",
 
+    music: Handle<AudioSource> = "music/dwarves_music.wav",
+
     dwarf_body_blue_idle: Handle<Aseprite> = "dwarves/body/Blue/Idle.aseprite",
     dwarf_body_blue_moving: Handle<Aseprite> = "dwarves/body/Blue/Moving.aseprite",
     dwarf_body_blue_jump: Handle<Aseprite> = "dwarves/body/Blue/Jump.aseprite",
