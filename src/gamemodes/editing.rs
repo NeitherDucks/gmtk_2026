@@ -19,6 +19,13 @@ impl Plugin for EditingGameModePlugin {
         app.init_resource::<MouseGridPosition>();
         app.add_systems(OnEnter(LevelState::Editing), setup);
         app.add_systems(
+            OnTransition {
+                exited: LevelState::Editing,
+                entered: LevelState::Playing,
+            },
+            to_playing,
+        );
+        app.add_systems(
             Update,
             (
                 update_mouse_pos,
@@ -37,20 +44,24 @@ impl Plugin for EditingGameModePlugin {
 }
 
 #[derive(Debug, Component)]
-pub struct PlacedTrap;
+struct PlacedTrap;
 
 #[derive(Debug, Resource)]
 pub struct PlacingTrap(pub TrapType);
 
 #[derive(Debug, Component)]
-pub struct TrapGhostTag;
+struct TrapGhostTag;
 
 #[derive(Debug, Resource, Default)]
-pub struct MouseGridPosition(Option<GridCoords>);
+struct MouseGridPosition(Option<GridCoords>);
 
-pub fn setup() {}
+fn setup() {}
 
-pub fn spawn_trap_ghost(
+fn to_playing(mut commands: Commands) {
+    commands.remove_resource::<PlacingTrap>();
+}
+
+fn spawn_trap_ghost(
     mut commands: Commands,
     placements: Query<Entity, With<TrapGhostTag>>,
     new_trap: If<Res<PlacingTrap>>,
@@ -89,7 +100,7 @@ fn update_mouse_pos(
     }
 }
 
-pub fn update_added_trap(
+fn update_added_trap(
     mut grid: ResMut<Grid>,
     query: Query<(Entity, &GridCoords, &TrapType), Added<GridCoords>>,
 ) {
@@ -98,7 +109,7 @@ pub fn update_added_trap(
     }
 }
 
-pub fn update_removed_trap(mut grid: ResMut<Grid>, mut query: RemovedComponents<GridCoords>) {
+fn update_removed_trap(mut grid: ResMut<Grid>, mut query: RemovedComponents<GridCoords>) {
     query.read().for_each(|entity| {
         grid.items.retain(|_, v| {
             if let Item::Trap((e, _)) = v
@@ -112,7 +123,7 @@ pub fn update_removed_trap(mut grid: ResMut<Grid>, mut query: RemovedComponents<
     });
 }
 
-pub fn update_trap_ghost(
+fn update_trap_ghost(
     mut ghost: Single<(&mut Transform, &mut Visibility, &mut Sprite), With<TrapGhostTag>>,
     mouse: Res<MouseGridPosition>,
     grid: Res<Grid>,
@@ -134,7 +145,7 @@ pub fn update_trap_ghost(
     }
 }
 
-pub fn update_inputs(
+fn update_inputs(
     mut commands: Commands,
     traps: Query<Entity, With<PlacedTrap>>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -216,7 +227,7 @@ pub fn update_inputs(
     }
 }
 
-pub fn cleanup_trap_ghost(mut commands: Commands, ghosts: Query<Entity, With<TrapGhostTag>>) {
+fn cleanup_trap_ghost(mut commands: Commands, ghosts: Query<Entity, With<TrapGhostTag>>) {
     // Remove any previous ghosts
     for entity in ghosts {
         commands.entity(entity).despawn();

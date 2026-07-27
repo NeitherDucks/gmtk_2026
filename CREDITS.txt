@@ -5,17 +5,19 @@ Code & Design
 NeitherDucks - neitherducks.itch.io
 targrub - targames.itch.io
 
-Audio
+Music & SFX
 Mariano Mendez - marianomendezb.itch.io
 
 Assets
 https://vegaboo.itch.io/pixel-dwarfs (https://creativecommons.org/publicdomain/zero/1.0/)
-https://pixel-poem.itch.io/dungeon-assetpuck ("LICENCE: This asset pack can be used in free and commercial projects. You can modify it to suit your own needs.")
+https://pixel-poem.itch.io/dungeon-assetpuck ("LICENSE: This asset pack can be used in free and commercial projects. You can modify it to suit your own needs.")
 https://free-game-assets.itch.io/free-pixel-art-dungeon-objects-asset-pack (https://craftpix.net/file-licenses/ Freebie Products)
-
+https://hypnobius.itch.io/dark-ages-ui ("LICENSE: Feel free to: - Use these assets for commercial (free or paid) and personal projects. - Modify tiles to suit your game or project. - Credit the artist (optional but appreciated)")
+https://shikashipx.itch.io/shikashis-fantasy-icons-pack ("LICENSE: You can use and edit these icons for commercial games and projects. Many of these icons were based on designs over at game-icons.net which are CC BY 4.0. Credit "Matt Firth (shikashipx)" and "game-icons.net"." )
+https://www.dafont.com/scriptorium.font by jeti ("LICENSE: You are free to use this font for personal or commercial projects, all I ask is that you include credit. Licensed under CC BY 4.0")
 
 Tools Used
-Visual Studio Code, GitKraken, Aseprite, LDtk, [mariano's tools used], [NeitherDucks's tools used]
+Visual Studio Code, GitKraken, Aseprite, LDtk, [mariano's tools used], Zed
 
 Generative AI was not used for code or assets.
 
