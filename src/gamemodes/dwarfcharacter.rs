@@ -1,19 +1,18 @@
-use crate::gamemodes::dwarfaction::DwarfAction;
-use crate::gamemodes::dwarfcolor::DwarfColor;
-use crate::gamemodes::dwarfdirection::DwarfDirection;
-use crate::gamemodes::dwarfresource::DwarfResource;
-use crate::gamemodes::dwarftool::DwarfTool;
-use bevy::prelude::*;
+use bevy::prelude::App;
+use bevy::prelude::Component;
+use bevy::prelude::Entity;
+use bevy::prelude::Plugin;
 use bevy_ecs_ldtk::GridCoords;
 
-#[derive(Resource, Clone)]
+#[derive(Component)]
+pub struct DwarfBody;
+
+#[derive(Component)]
+pub struct DwarfParts;
+
+#[derive(Component, Clone, Copy, Debug)]
 pub struct DwarfCharacter {
     pub grid_coords: GridCoords,
-    pub color: DwarfColor,
-    pub action: DwarfAction,
-    pub direction: DwarfDirection,
-    pub tool: DwarfTool,
-    pub resource: DwarfResource,
     pub body: Entity,
     pub parts: Entity,
     pub move_distance: f32, // distance moved in current Moving action

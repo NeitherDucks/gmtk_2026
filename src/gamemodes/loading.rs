@@ -1,17 +1,11 @@
 use bevy::prelude::*;
-use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 use bevy_ecs_ldtk::prelude::*;
 
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
     entities::{ChestTag, DoorTag, StartingPointTag, TrapType},
-    gamemodes::{
-        ActionsRequested, DwarfAction, DwarfCharacter, DwarfColor, DwarfDirection, DwarfResource,
-        DwarfTool, Grid, Item, LevelChests, LevelWalls,
-        dwarf::{clone_dwarf_body_animation, clone_dwarf_parts_animation},
-        hand::Hand,
-    },
+    gamemodes::{Grid, Item, LevelChests, LevelWalls, hand::Hand, playing::spawn_dwarves},
 };
 
 const TILE_SIZE: i32 = 16;
@@ -20,7 +14,7 @@ pub struct LoadingGameModePlugin;
 
 impl Plugin for LoadingGameModePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LevelState::Loading), setup);
+        app.add_systems(OnEnter(LevelState::Loading), (setup, spawn_dwarves).chain());
         app.add_systems(
             Update,
             (
@@ -50,67 +44,8 @@ pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
 
     commands.init_resource::<LevelWalls>();
     commands.init_resource::<LevelChests>();
-    commands.init_resource::<ActionsRequested>();
 
     commands.init_resource::<Grid>();
-
-    spawn_initial_dwarf(commands.reborrow(), &handles);
-}
-
-fn spawn_initial_dwarf(mut commands: Commands, handles: &AssetHandles) {
-    let grid_coords: GridCoords = GridCoords { x: 1, y: 5 };
-
-    // these formulas aren't correct yet plus they should be (and probably are) in a world_to_screen-type function
-    let tx = grid_coords.x * TILE_SIZE + TILE_SIZE / 2;
-    let ty = grid_coords.y * TILE_SIZE - TILE_SIZE / 2;
-
-    const BODY_Z: f32 = 10.0_f32;
-    const PARTS_Z: f32 = 11.0_f32;
-
-    let body_color = DwarfColor::Blue;
-    let body_action = DwarfAction::Idle;
-    let direction = DwarfDirection::Right;
-    let tool = DwarfTool::BareHands;
-    let resource = DwarfResource::Gold;
-
-    let dwarf_body_entity = commands
-        .spawn((
-            Name::new("Body"),
-            Sprite::default(),
-            Transform::from_translation(Vec3::new(tx as f32, ty as f32, BODY_Z)),
-        ))
-        .id();
-    let dwarf_parts_entity = commands
-        .spawn((
-            Name::new("Parts"),
-            Sprite::default(),
-            Transform::from_translation(Vec3::new(tx as f32, ty as f32, PARTS_Z)),
-        ))
-        .id();
-
-    let dwarf = DwarfCharacter {
-        grid_coords,
-        action: body_action,
-        direction,
-        color: body_color,
-        resource,
-        tool,
-        body: dwarf_body_entity,
-        parts: dwarf_parts_entity,
-        move_distance: 0.0,
-    };
-
-    // Add animations based on the dwarf's initial state
-    commands.entity(dwarf_body_entity).insert(AseAnimation {
-        animation: Animation::default(),
-        aseprite: clone_dwarf_body_animation(&dwarf, handles),
-    });
-    commands.entity(dwarf_parts_entity).insert(AseAnimation {
-        animation: Animation::default(),
-        aseprite: clone_dwarf_parts_animation(&dwarf, handles),
-    });
-
-    commands.insert_resource(dwarf);
 }
 
 pub fn get_level_size(

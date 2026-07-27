@@ -5,7 +5,10 @@ use bevy::prelude::Reflect;
 use bevy_ecs_ldtk::EntityInstance;
 use bevy_ecs_ldtk::prelude::ldtk::ldtk_fields::*;
 
-#[derive(Component, Clone, Copy, Eq, PartialEq, Hash, Debug, Default, Reflect)]
+#[derive(Component, Clone, Eq, PartialEq, Hash, Debug, Default)]
+pub struct DwarfColorComponent(pub DwarfColor);
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default, Reflect)]
 pub enum DwarfColor {
     #[default]
     Blue,
@@ -14,17 +17,17 @@ pub enum DwarfColor {
     Purple,
 }
 
-impl DwarfColor {
+impl DwarfColorComponent {
     pub fn from_field(entity_instance: &EntityInstance) -> Self {
         match entity_instance
             .get_enum_field("DwarfColor")
             .map(String::as_str)
         {
-            Ok("Blue") => DwarfColor::Blue,
-            Ok("Red") => DwarfColor::Red,
-            Ok("Yellow") => DwarfColor::Yellow,
-            Ok("Purple") => DwarfColor::Purple,
-            _ => DwarfColor::Blue,
+            Ok("Blue") => DwarfColorComponent(DwarfColor::Blue),
+            Ok("Red") => DwarfColorComponent(DwarfColor::Red),
+            Ok("Yellow") => DwarfColorComponent(DwarfColor::Yellow),
+            Ok("Purple") => DwarfColorComponent(DwarfColor::Purple),
+            _ => DwarfColorComponent(DwarfColor::Blue),
         }
     }
 }

@@ -1,8 +1,13 @@
 use bevy::prelude::App;
+use bevy::prelude::Component;
 use bevy::prelude::Plugin;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Component, Clone, Eq, PartialEq, Hash, Debug, Default)]
+pub struct DwarfActionComponent(pub DwarfAction);
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub enum DwarfAction {
+    #[default]
     Idle,
     Moving,
     Jump,

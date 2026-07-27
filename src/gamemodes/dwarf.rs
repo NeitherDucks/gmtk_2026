@@ -3,15 +3,16 @@ use bevy_aseprite_ultra::prelude::{Animation, AseAnimation, Aseprite};
 
 use crate::{
     asset_loading::AssetHandles,
-    gamemodes::{DwarfAction, DwarfCharacter, DwarfColor, DwarfResource, DwarfTool},
+    gamemodes::{DwarfAction, DwarfColor, DwarfResource, DwarfTool},
 };
 
 pub fn clone_dwarf_body_animation(
-    dwarf: &DwarfCharacter,
+    dwarf_color: &DwarfColor,
+    dwarf_action: &DwarfAction,
     handles: &AssetHandles,
 ) -> Handle<Aseprite> {
-    match dwarf.color {
-        DwarfColor::Blue => match dwarf.action {
+    match dwarf_color {
+        DwarfColor::Blue => match dwarf_action {
             DwarfAction::Idle => handles.dwarf_body_blue_idle.clone(),
             DwarfAction::Moving => handles.dwarf_body_blue_moving.clone(),
             DwarfAction::Jump => handles.dwarf_body_blue_jump.clone(),
@@ -24,7 +25,7 @@ pub fn clone_dwarf_body_animation(
             DwarfAction::Throw => handles.dwarf_body_blue_throw.clone(),
             DwarfAction::Swing => handles.dwarf_body_blue_swing.clone(),
         },
-        DwarfColor::Red => match dwarf.action {
+        DwarfColor::Red => match dwarf_action {
             DwarfAction::Idle => handles.dwarf_body_red_idle.clone(),
             DwarfAction::Moving => handles.dwarf_body_red_moving.clone(),
             DwarfAction::Jump => handles.dwarf_body_red_jump.clone(),
@@ -37,7 +38,7 @@ pub fn clone_dwarf_body_animation(
             DwarfAction::Throw => handles.dwarf_body_red_throw.clone(),
             DwarfAction::Swing => handles.dwarf_body_red_swing.clone(),
         },
-        DwarfColor::Yellow => match dwarf.action {
+        DwarfColor::Yellow => match dwarf_action {
             DwarfAction::Idle => handles.dwarf_body_yellow_idle.clone(),
             DwarfAction::Moving => handles.dwarf_body_yellow_moving.clone(),
             DwarfAction::Jump => handles.dwarf_body_yellow_jump.clone(),
@@ -50,7 +51,7 @@ pub fn clone_dwarf_body_animation(
             DwarfAction::Throw => handles.dwarf_body_yellow_throw.clone(),
             DwarfAction::Swing => handles.dwarf_body_yellow_swing.clone(),
         },
-        DwarfColor::Purple => match dwarf.action {
+        DwarfColor::Purple => match dwarf_action {
             DwarfAction::Idle => handles.dwarf_body_purple_idle.clone(),
             DwarfAction::Moving => handles.dwarf_body_purple_moving.clone(),
             DwarfAction::Jump => handles.dwarf_body_purple_jump.clone(),
@@ -67,96 +68,98 @@ pub fn clone_dwarf_body_animation(
 }
 
 pub fn clone_dwarf_parts_animation(
-    dwarf: &DwarfCharacter,
+    dwarf_action: &DwarfAction,
+    dwarf_tool: &DwarfTool,
+    dwarf_resource: &DwarfResource,
     handles: &AssetHandles,
 ) -> Handle<Aseprite> {
-    match dwarf.action {
-        DwarfAction::Idle => match dwarf.tool {
+    match dwarf_action {
+        DwarfAction::Idle => match dwarf_tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_idle.clone(),
-            DwarfTool::Shovel => match dwarf.resource {
+            DwarfTool::Shovel => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_shovel_gold_idle.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_shovel_iron_idle.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_shovel_stone_idle.clone(),
             },
-            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf.resource {
+            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_pickaxe_gold_idle.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_pickaxe_iron_idle.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_pickaxe_stone_idle.clone(),
             },
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_idle.clone(),
         },
-        DwarfAction::Moving => match dwarf.tool {
+        DwarfAction::Moving => match dwarf_tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_moving.clone(),
-            DwarfTool::Shovel => match dwarf.resource {
+            DwarfTool::Shovel => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_shovel_gold_moving.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_shovel_iron_moving.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_shovel_stone_moving.clone(),
             },
-            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf.resource {
+            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_pickaxe_gold_moving.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_pickaxe_iron_moving.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_pickaxe_stone_moving.clone(),
             },
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_moving.clone(),
         },
-        DwarfAction::Jump => match dwarf.tool {
+        DwarfAction::Jump => match dwarf_tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_jump.clone(),
-            DwarfTool::Shovel => match dwarf.resource {
+            DwarfTool::Shovel => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_shovel_gold_jump.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_shovel_iron_jump.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_shovel_stone_jump.clone(),
             },
-            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf.resource {
+            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_pickaxe_gold_jump.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_pickaxe_iron_jump.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_pickaxe_stone_jump.clone(),
             },
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_jump.clone(),
         },
-        DwarfAction::LightLanding => match dwarf.tool {
+        DwarfAction::LightLanding => match dwarf_tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_lightlanding.clone(),
-            DwarfTool::Shovel => match dwarf.resource {
+            DwarfTool::Shovel => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_shovel_gold_lightlanding.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_shovel_iron_lightlanding.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_shovel_stone_lightlanding.clone(),
             },
-            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf.resource {
+            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_pickaxe_gold_lightlanding.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_pickaxe_iron_lightlanding.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_pickaxe_stone_lightlanding.clone(),
             },
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_lightlanding.clone(),
         },
-        DwarfAction::HeavyLanding => match dwarf.tool {
+        DwarfAction::HeavyLanding => match dwarf_tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_heavylanding.clone(),
-            DwarfTool::Shovel => match dwarf.resource {
+            DwarfTool::Shovel => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_shovel_gold_heavylanding.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_shovel_iron_heavylanding.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_shovel_stone_heavylanding.clone(),
             },
-            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf.resource {
+            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_pickaxe_gold_heavylanding.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_pickaxe_iron_heavylanding.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_pickaxe_stone_heavylanding.clone(),
             },
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_heavylanding.clone(),
         },
-        DwarfAction::StandUp => match dwarf.tool {
+        DwarfAction::StandUp => match dwarf_tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_standup.clone(),
-            DwarfTool::Shovel => match dwarf.resource {
+            DwarfTool::Shovel => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_shovel_gold_standup.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_shovel_iron_standup.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_shovel_stone_standup.clone(),
             },
-            DwarfTool::MultiTool | DwarfTool::Pickaxe => match dwarf.resource {
+            DwarfTool::MultiTool | DwarfTool::Pickaxe => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_pickaxe_gold_standup.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_pickaxe_iron_standup.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_pickaxe_stone_standup.clone(),
             },
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_standup.clone(),
         },
-        DwarfAction::Shoveling => match dwarf.tool {
-            DwarfTool::Shovel => match dwarf.resource {
+        DwarfAction::Shoveling => match dwarf_tool {
+            DwarfTool::Shovel => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_shovel_gold_shoveling.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_shovel_iron_shoveling.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_shovel_stone_shoveling.clone(),
@@ -168,20 +171,20 @@ pub fn clone_dwarf_parts_animation(
                 unimplemented!();
             }
         },
-        DwarfAction::Climbing => match dwarf.tool {
+        DwarfAction::Climbing => match dwarf_tool {
             DwarfTool::BareHands => handles.dwarf_parts_barehands_climbing.clone(),
             _ => unimplemented!(),
         },
-        DwarfAction::Light => match dwarf.tool {
+        DwarfAction::Light => match dwarf_tool {
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_light.clone(),
             _ => unimplemented!(),
         },
-        DwarfAction::Throw => match dwarf.tool {
+        DwarfAction::Throw => match dwarf_tool {
             DwarfTool::Dynamite => handles.dwarf_parts_dynamite_throw.clone(),
             _ => unimplemented!(),
         },
-        DwarfAction::Swing => match dwarf.tool {
-            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf.resource {
+        DwarfAction::Swing => match dwarf_tool {
+            DwarfTool::Pickaxe | DwarfTool::MultiTool => match dwarf_resource {
                 DwarfResource::Gold => handles.dwarf_parts_pickaxe_gold_swing.clone(),
                 DwarfResource::Iron => handles.dwarf_parts_pickaxe_iron_swing.clone(),
                 DwarfResource::Stone => handles.dwarf_parts_pickaxe_stone_swing.clone(),
@@ -193,11 +196,13 @@ pub fn clone_dwarf_parts_animation(
 
 pub fn update_dwarf_body_animation(
     commands: &mut Commands,
-    dwarf: &DwarfCharacter,
+    dwarf_body: Entity,
+    dwarf_color: &DwarfColor,
+    dwarf_action: &DwarfAction,
     handles: &AssetHandles,
 ) {
-    let new_aseprite = clone_dwarf_body_animation(dwarf, handles);
-    commands.entity(dwarf.body).insert(AseAnimation {
+    let new_aseprite = clone_dwarf_body_animation(dwarf_color, dwarf_action, handles);
+    commands.entity(dwarf_body).insert(AseAnimation {
         animation: Animation::default(),
         aseprite: new_aseprite,
     });
@@ -205,11 +210,15 @@ pub fn update_dwarf_body_animation(
 
 pub fn update_dwarf_parts_animation(
     commands: &mut Commands,
-    dwarf: &DwarfCharacter,
+    dwarf_parts: Entity,
+    dwarf_action: &DwarfAction,
+    dwarf_tool: &DwarfTool,
+    dwarf_resource: &DwarfResource,
     handles: &AssetHandles,
 ) {
-    let new_aseprite = clone_dwarf_parts_animation(dwarf, handles);
-    commands.entity(dwarf.parts).insert(AseAnimation {
+    let new_aseprite =
+        clone_dwarf_parts_animation(dwarf_action, dwarf_tool, dwarf_resource, handles);
+    commands.entity(dwarf_parts).insert(AseAnimation {
         animation: Animation::default(),
         aseprite: new_aseprite,
     });

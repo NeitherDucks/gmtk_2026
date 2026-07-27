@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
@@ -19,13 +19,15 @@ mod hand;
 mod loading;
 mod playing;
 mod playing_ui;
+mod requests;
 
-pub use dwarfaction::DwarfAction;
+pub use dwarfaction::{DwarfAction, DwarfActionComponent};
 pub use dwarfcharacter::DwarfCharacter;
-pub use dwarfcolor::DwarfColor;
-pub use dwarfdirection::DwarfDirection;
-pub use dwarfresource::DwarfResource;
-pub use dwarftool::DwarfTool;
+pub use dwarfcolor::{DwarfColor, DwarfColorComponent};
+pub use dwarfdirection::{DwarfDirection, DwarfDirectionComponent};
+pub use dwarfresource::{DwarfResource, DwarfResourceComponent};
+pub use dwarftool::{DwarfTool, DwarfToolComponent};
+use requests::Requests;
 
 use dwarfaction::DwarfActionPlugin;
 use dwarfactionrequest::DwarfActionRequest;
@@ -117,6 +119,3 @@ impl LevelChests {
         self.chest_locations.contains(grid_coords)
     }
 }
-
-#[derive(Resource, Default)]
-pub struct ActionsRequested(pub VecDeque<DwarfActionRequest>);

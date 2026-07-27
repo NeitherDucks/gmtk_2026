@@ -1,19 +1,19 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
-use crate::gamemodes::{DwarfColor, DwarfDirection, DwarfTool};
+use crate::gamemodes::{DwarfColorComponent, DwarfDirectionComponent, DwarfToolComponent};
 
 #[derive(Bundle, LdtkEntity, Default)]
 pub struct StartingPoint {
     #[grid_coords]
     grid_coords: GridCoords,
     tag: StartingPointTag,
-    #[with(DwarfColor::from_field)]
-    color: DwarfColor,
-    #[with(DwarfTool::from_field)]
-    tool: DwarfTool,
-    #[with(DwarfDirection::from_field)]
-    direction: DwarfDirection,
+    #[with(DwarfColorComponent::from_field)]
+    color: DwarfColorComponent,
+    #[with(DwarfToolComponent::from_field)]
+    tool: DwarfToolComponent,
+    #[with(DwarfDirectionComponent::from_field)]
+    direction: DwarfDirectionComponent,
 }
 
 #[derive(Default, Component)]
