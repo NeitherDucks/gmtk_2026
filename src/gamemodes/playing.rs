@@ -10,7 +10,6 @@ use crate::gamemodes::{
     DwarfAction, DwarfActionComponent, DwarfActionRequest, DwarfCharacter, DwarfColor,
     DwarfColorComponent, DwarfDirection, DwarfDirectionComponent, DwarfResource,
     DwarfResourceComponent, DwarfTool, DwarfToolComponent, Requests,
-    dwarfcharacter::{DwarfBody, DwarfParts},
 };
 
 use bevy_ecs_ldtk::prelude::*;
@@ -28,6 +27,7 @@ impl Plugin for PlayingGameModePlugin {
             Update,
             ((dev_input, process_action_request).chain()).run_if(in_state(LevelState::Playing)),
         );
+        app.add_systems(OnExit(LevelState::Playing), cleanup);
     }
 }
 
@@ -48,53 +48,52 @@ pub fn spawn_dwarves(
     // go through StartingSpots in the level, add a Dwarf for each one with ActionRequest(DwarfActionRequest::MoveForward) added to their deque
     for (coords, dwarf_color, dwarf_tool, dwarf_direction) in starting_points.iter() {
         const BODY_Z: f32 = 10.0_f32;
-        const PARTS_Z: f32 = 11.0_f32;
 
         let (tx, ty) = (
             coords.x * TILE_SIZE + TILE_SIZE / 2,
             coords.y * TILE_SIZE + TILE_SIZE / 2,
         );
 
-        let dwarf_body_entity = commands
-            .spawn((
-                DwarfBody,
-                Sprite::default(),
-                Transform::from_translation(Vec3::new(tx as f32, ty as f32, BODY_Z)),
-            ))
-            .id();
-        let dwarf_parts_entity = commands
-            .spawn((
-                DwarfParts,
-                Sprite::default(),
-                Transform::from_translation(Vec3::new(tx as f32, ty as f32, PARTS_Z)),
-            ))
-            .id();
-
         println!("put a dwarf at {}, {}", coords.x, coords.y);
         let body_action = DwarfAction::Idle;
         let resource = DwarfResource::Gold;
 
-        commands.spawn((
-            DwarfCharacter {
-                grid_coords: *coords,
-                body: dwarf_body_entity,
-                parts: dwarf_parts_entity,
-                move_distance: default(),
-            },
-            DwarfActionComponent(body_action),
-            DwarfColorComponent(dwarf_color.0),
-            DwarfToolComponent(dwarf_tool.0),
-            DwarfDirectionComponent(dwarf_direction.0),
-            DwarfResourceComponent(resource),
-            Requests(VecDeque::from([
-                DwarfActionRequest::ChangeColor(DwarfColor::Purple),
-                DwarfActionRequest::ChangeTool(DwarfTool::Pickaxe),
-                DwarfActionRequest::ChangeTool(DwarfTool::Dynamite),
-                DwarfActionRequest::ChangeDirection(DwarfDirection::Left),
-                DwarfActionRequest::MoveForward,
-                DwarfActionRequest::ChangeColor(DwarfColor::Red),
-            ])),
-        ));
+        let body_id = commands.spawn((Sprite::default(),)).id();
+        let parts_id = commands
+            .spawn((
+                Sprite::default(),
+                Transform::from_translation(Vec3::new(0., 0., 1.)),
+            ))
+            .id();
+        let character_id = commands
+            .spawn((
+                DwarfCharacter {
+                    grid_coords: *coords,
+                    body: body_id,
+                    parts: parts_id,
+                    move_distance: 0.,
+                },
+                Transform::from_translation(Vec3::new(tx as f32, ty as f32, BODY_Z)),
+                DwarfActionComponent(body_action),
+                DwarfColorComponent(dwarf_color.0),
+                DwarfToolComponent(dwarf_tool.0),
+                DwarfDirectionComponent(dwarf_direction.0),
+                DwarfResourceComponent(resource),
+                Requests(VecDeque::from([
+                    // test set of initial requests to complete when spawned
+                    DwarfActionRequest::ChangeColor(DwarfColor::Purple),
+                    DwarfActionRequest::ChangeTool(DwarfTool::Pickaxe),
+                    DwarfActionRequest::ChangeTool(DwarfTool::Dynamite),
+                    DwarfActionRequest::ChangeDirection(DwarfDirection::Left),
+                    DwarfActionRequest::MoveForward,
+                    DwarfActionRequest::ChangeColor(DwarfColor::Red),
+                ])),
+            ))
+            .id();
+        commands
+            .entity(character_id)
+            .add_children(&[body_id, parts_id]);
+        //break;  // hack for just 1 dwarf
     }
 }
 
@@ -107,37 +106,42 @@ fn process_action_request(
     mut query: Query<(
         Entity,
         &mut DwarfCharacter,
+        &mut Transform,
         &mut Requests,
-        &DwarfActionComponent,
+        &DwarfColorComponent,
+        &mut DwarfActionComponent,
+        &DwarfDirectionComponent,
         &DwarfResourceComponent,
         Option<&ActionCompleted>,
     )>,
-    mut transforms_query: Query<(Entity, &mut Transform)>,
     handles: Res<AssetHandles>,
     time: Res<Time>,
 ) {
     let dt = time.delta_secs();
 
-    for (e, mut dwarf, mut reqs, current_action, current_resource, completed_opt) in
-        query.iter_mut()
+    for (
+        e,
+        mut dwarf,
+        mut current_transform,
+        mut reqs,
+        current_color,
+        mut current_action,
+        current_direction,
+        current_resource,
+        completed_opt,
+    ) in query.iter_mut()
     {
         let mut completed = completed_opt.is_some();
         if let Some(first_request) = reqs.0.front() {
             // have requests to do
             if !completed {
-                println!("{:?} not complete for {:?}", first_request, dwarf);
-                let mut _direction_changed = false;
-                let mut _body_action_changed = false;
-                let mut _tool_changed = false;
-                let mut _color_changed = false;
-                let mut moved = false;
+                //println!("{:?} not complete for {:?}", first_request, dwarf);
 
                 // advance first_request; if completed, add ActionCompleted component
                 // TODO: decide if request is for same color/direction/tool, do we do anything? presently, yes
-                let request = first_request;
-                match request {
+                //let request = first_request;
+                match first_request {
                     DwarfActionRequest::ChangeColor(new_color) => {
-                        _color_changed = true;
                         completed = true;
                         commands.entity(e).insert(DwarfColorComponent(*new_color));
                         update_dwarf_body_animation(
@@ -149,14 +153,12 @@ fn process_action_request(
                         );
                     }
                     DwarfActionRequest::ChangeDirection(new_direction) => {
-                        _direction_changed = true;
                         completed = true;
                         commands
                             .entity(e)
                             .insert(DwarfDirectionComponent(*new_direction));
                     }
                     DwarfActionRequest::ChangeTool(new_tool) => {
-                        _tool_changed = true;
                         completed = true;
                         commands.entity(e).insert(DwarfToolComponent(*new_tool));
                         // TODO: need current action and resource
@@ -170,35 +172,76 @@ fn process_action_request(
                         );
                     }
                     DwarfActionRequest::MoveForward => {
-                        moved = true;
-                        dwarf.move_distance += dt * DWARF_MOVE_SPEED;
-
-                        completed = dwarf.move_distance >= TILE_SIZE as f32; // TODO: for now
+                        println!(
+                            "MoveForward completed={completed} {:?} {:?}",
+                            dwarf, current_action.0
+                        );
+                        if DwarfAction::Idle == current_action.0 {
+                            println!("move to Moving from Idle");
+                            current_action.0 = DwarfAction::Moving;
+                            dwarf.move_distance = 0.0;
+                            update_dwarf_body_animation(
+                                &mut commands,
+                                dwarf.body,
+                                &current_color.0,
+                                &DwarfAction::Moving,
+                                &handles,
+                            );
+                        }
+                        let grid_movement_direction = match current_direction.0 {
+                            DwarfDirection::Up => GridCoords::new(0, 1),
+                            DwarfDirection::Down => GridCoords::new(0, -1),
+                            DwarfDirection::Left => GridCoords::new(-1, 0),
+                            DwarfDirection::Right => GridCoords::new(1, 0),
+                        };
+                        let destination = dwarf.grid_coords + grid_movement_direction;
+                        let can_move_forward = true; // TODO: check walls, doors, etc.
+                        if DwarfAction::Moving == current_action.0 && can_move_forward {
+                            println!("can move foward {:?}", dwarf);
+                            let distance_this_frame = DWARF_MOVE_SPEED * dt;
+                            dwarf.move_distance += distance_this_frame;
+                            match current_direction.0 {
+                                DwarfDirection::Up => {
+                                    current_transform.translation.y += distance_this_frame
+                                }
+                                DwarfDirection::Down => {
+                                    current_transform.translation.y -= distance_this_frame
+                                }
+                                DwarfDirection::Right => {
+                                    current_transform.translation.x += distance_this_frame
+                                }
+                                DwarfDirection::Left => {
+                                    current_transform.translation.x -= distance_this_frame
+                                }
+                            };
+                            if current_direction.0 == DwarfDirection::Left {
+                                current_transform.scale.x = -1.;
+                            } else {
+                                current_transform.scale.x = 1.;
+                            }
+                        }
+                        completed = dwarf.move_distance >= TILE_SIZE as f32;
+                        if completed {
+                            println!("completed");
+                            dwarf.grid_coords = destination;
+                            dwarf.move_distance = 0.;
+                        }
+                        update_dwarf_body_animation(
+                            &mut commands,
+                            dwarf.body,
+                            &current_color.0,
+                            if completed {
+                                &DwarfAction::Idle
+                            } else {
+                                &DwarfAction::Moving
+                            },
+                            &handles,
+                        );
                     }
                     DwarfActionRequest::TakeAction(_new_action) => {
                         completed = false;
                     }
                 };
-
-                // Keep parts transform in sync with body transform
-                if moved {
-                    let mut body_transform: Option<Transform> = None;
-                    if let Ok((_body_entity, found_body_transform)) =
-                        transforms_query.get_mut(dwarf.body)
-                    {
-                        body_transform = Some((*found_body_transform).clone());
-                    } else {
-                        panic!("no dwarf body transform");
-                    }
-                    if let Ok((_part_entity, mut parts_transform)) =
-                        transforms_query.get_mut(dwarf.parts)
-                    {
-                        parts_transform.translation =
-                            body_transform.unwrap().translation + Vec3::new(0.0, 0.0, 1.0); // keep parts z one greater than body
-                    } else {
-                        panic!("no dwarf parts transform");
-                    }
-                }
 
                 if completed {
                     commands.entity(e).insert(ActionCompleted);
@@ -206,7 +249,7 @@ fn process_action_request(
                     dwarf.move_distance = 0.0;
                 }
             } else {
-                println!("{:?} completed {:?}", first_request, dwarf);
+                //println!("{:?} completed {:?}", first_request, dwarf);
                 commands.entity(e).remove::<ActionCompleted>();
                 // advance to next request
                 reqs.0.pop_front();
@@ -270,4 +313,10 @@ pub fn check_goal(
     _goals: Query<&GridCoords, With<GoalTag>>,
 ) {
     // look through dwarfs to see if their GridCoords are the same as a GoalTag's
+}
+
+fn cleanup(mut commands: Commands, dwarves_query: Query<Entity, With<DwarfCharacter>>) {
+    for entity in dwarves_query {
+        commands.entity(entity).despawn();
+    }
 }

@@ -4,12 +4,6 @@ use bevy::prelude::Entity;
 use bevy::prelude::Plugin;
 use bevy_ecs_ldtk::GridCoords;
 
-#[derive(Component)]
-pub struct DwarfBody;
-
-#[derive(Component)]
-pub struct DwarfParts;
-
 #[derive(Component, Clone, Copy, Debug)]
 pub struct DwarfCharacter {
     pub grid_coords: GridCoords,

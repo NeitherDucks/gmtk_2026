@@ -99,6 +99,7 @@ pub struct LevelWalls {
     level_height: i32,
 }
 
+/*
 impl LevelWalls {
     fn in_wall(&self, grid_coords: &GridCoords) -> bool {
         grid_coords.x < 0
@@ -108,6 +109,7 @@ impl LevelWalls {
             || self.wall_locations.contains(grid_coords)
     }
 }
+*/
 
 #[derive(Default, Resource, Debug)]
 pub struct LevelChests {
