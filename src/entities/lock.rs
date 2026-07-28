@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
-#[derive(Component, Default, Reflect, PartialEq, Eq)]
+#[derive(Component, Debug, Default, Clone, Copy, Reflect, PartialEq, Eq)]
 pub enum Lock {
     #[default]
     Unlocked,

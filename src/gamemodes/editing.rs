@@ -5,7 +5,7 @@ use crate::{
     entities::TrapTag,
     entities::TrapType,
     gamemodes::hand::Hand,
-    gamemodes::{Grid, Item},
+    gamemodes::{Grid, Tile},
 };
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::GridCoords;
@@ -105,14 +105,14 @@ fn update_added_trap(
     query: Query<(Entity, &GridCoords, &TrapType), Added<GridCoords>>,
 ) {
     for (entity, coord, trap) in &query {
-        grid.items.insert(*coord, Item::Trap((entity, *trap)));
+        grid.items.insert(*coord, Tile::Trap((entity, *trap)));
     }
 }
 
 fn update_removed_trap(mut grid: ResMut<Grid>, mut query: RemovedComponents<GridCoords>) {
     query.read().for_each(|entity| {
         grid.items.retain(|_, v| {
-            if let Item::Trap((e, _)) = v
+            if let Tile::Trap((e, _)) = v
                 && e == &entity
             {
                 false
@@ -167,7 +167,7 @@ fn update_inputs(
         if mouse.just_pressed(MouseButton::Right)
             && let Some(coord) = coord.0
             && let Some(item) = grid.items.get(&coord)
-            && let Item::Trap((entity, trap)) = item
+            && let Tile::Trap((entity, trap)) = item
             && traps.contains(*entity)
             && hand.increment(trap).is_some()
         {

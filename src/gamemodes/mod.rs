@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
-use crate::entities::TrapType;
+use crate::entities::{Lock, TrapType};
 
 mod dwarf;
 mod dwarfaction;
@@ -64,17 +64,17 @@ impl Plugin for GameModesPlugin {
 }
 
 #[derive(Debug)]
-pub enum Item {
+pub enum Tile {
     Wall,
     Chest,
     Trap((Entity, TrapType)),
     Dwarf,
-    Door,
+    Door(Lock),
 }
 
 #[derive(Default, Resource, Debug)]
 pub struct Grid {
-    items: HashMap<GridCoords, Item>,
+    items: HashMap<GridCoords, Tile>,
     width: i32,
     height: i32,
 }
@@ -88,7 +88,28 @@ impl Grid {
     }
 
     pub fn is_collision(&self, grid_coords: &GridCoords) -> bool {
-        self.is_outside_level(grid_coords) || self.items.contains_key(grid_coords)
+        self.is_outside_level(grid_coords)
+            || match self.items.get(grid_coords) {
+                Some(Tile::Wall)
+                | Some(Tile::Chest)
+                | Some(Tile::Dwarf)
+                | Some(Tile::Door(Lock::Gold))
+                | Some(Tile::Door(Lock::Silver)) => true,
+                Some(Tile::Trap((_, trap))) => match trap {
+                    TrapType::Nothing
+                    | TrapType::Up
+                    | TrapType::Left
+                    | TrapType::Down
+                    | TrapType::Right
+                    | TrapType::Catapult => false,
+                    TrapType::Rock => true,
+                },
+                Some(Tile::Door(Lock::Unlocked)) | None => false,
+            }
+    }
+
+    pub fn is_passable(&self, grid_coords: &GridCoords) -> bool {
+        !self.is_collision(grid_coords)
     }
 }
 

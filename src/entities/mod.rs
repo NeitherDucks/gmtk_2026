@@ -13,6 +13,7 @@ mod wall;
 pub use chest::ChestTag;
 pub use door::DoorTag;
 pub use goal::GoalTag;
+pub use lock::Lock;
 pub use startingpoint::StartingPointTag;
 pub use trap::{Trap, TrapTag};
 pub use traptype::TrapType;

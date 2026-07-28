@@ -4,8 +4,8 @@ use bevy_ecs_ldtk::prelude::*;
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
-    entities::{ChestTag, DoorTag, StartingPointTag, TrapType},
-    gamemodes::{Grid, Item, LevelChests, LevelWalls, hand::Hand, playing::spawn_dwarves},
+    entities::{ChestTag, DoorTag, Lock, StartingPointTag, TrapType},
+    gamemodes::{Grid, LevelChests, LevelWalls, Tile, hand::Hand, playing::spawn_dwarves},
 };
 
 const TILE_SIZE: i32 = 16;
@@ -82,7 +82,7 @@ pub fn cache_wall_locations(
     for (coords, tag) in query {
         if tag.tags.contains(&"Wall".to_string()) {
             level_walls.wall_locations.insert(*coords);
-            grid.items.insert(*coords, Item::Wall);
+            grid.items.insert(*coords, Tile::Wall);
         }
     }
 }
@@ -95,21 +95,23 @@ pub fn cache_items_location(
             &GridCoords,
             Option<&ChestTag>,
             Option<&DoorTag>,
+            Option<&Lock>,
             Option<&StartingPointTag>,
             Option<&TrapType>,
         ),
         Added<GridCoords>,
     >,
 ) {
-    for (entity, coord, chest, door, start, trap) in &query {
+    for (entity, coord, chest, door, lock, start, trap) in &query {
         if chest.is_some() {
-            grid.items.insert(*coord, Item::Chest);
+            grid.items.insert(*coord, Tile::Chest);
         } else if door.is_some() {
-            grid.items.insert(*coord, Item::Door);
+            grid.items
+                .insert(*coord, Tile::Door(lock.copied().unwrap_or_default()));
         } else if start.is_some() {
-            grid.items.insert(*coord, Item::Dwarf);
+            grid.items.insert(*coord, Tile::Dwarf);
         } else if let Some(trap) = trap {
-            grid.items.insert(*coord, Item::Trap((entity, *trap)));
+            grid.items.insert(*coord, Tile::Trap((entity, *trap)));
         }
     }
 }

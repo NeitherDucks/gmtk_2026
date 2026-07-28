@@ -9,7 +9,7 @@ use crate::gamemodes::dwarf::{update_dwarf_body_animation, update_dwarf_parts_an
 use crate::gamemodes::{
     DwarfAction, DwarfActionComponent, DwarfActionRequest, DwarfCharacter, DwarfColor,
     DwarfColorComponent, DwarfDirection, DwarfDirectionComponent, DwarfResource,
-    DwarfResourceComponent, DwarfTool, DwarfToolComponent, Requests,
+    DwarfResourceComponent, DwarfTool, DwarfToolComponent, Grid, Requests,
 };
 
 use bevy_ecs_ldtk::prelude::*;
@@ -54,7 +54,7 @@ pub fn spawn_dwarves(
             coords.y * TILE_SIZE + TILE_SIZE / 2,
         );
 
-        println!("put a dwarf at {}, {}", coords.x, coords.y);
+        info!("put a dwarf at {}, {}", coords.x, coords.y);
         let body_action = DwarfAction::Idle;
         let resource = DwarfResource::Gold;
 
@@ -114,6 +114,7 @@ fn process_action_request(
         &DwarfResourceComponent,
         Option<&ActionCompleted>,
     )>,
+    grid: Res<Grid>,
     handles: Res<AssetHandles>,
     time: Res<Time>,
 ) {
@@ -172,12 +173,13 @@ fn process_action_request(
                         );
                     }
                     DwarfActionRequest::MoveForward => {
-                        println!(
+                        info!(
                             "MoveForward completed={completed} {:?} {:?}",
                             dwarf, current_action.0
                         );
+
                         if DwarfAction::Idle == current_action.0 {
-                            println!("move to Moving from Idle");
+                            info!("move to Moving from Idle");
                             current_action.0 = DwarfAction::Moving;
                             dwarf.move_distance = 0.0;
                             update_dwarf_body_animation(
@@ -188,6 +190,7 @@ fn process_action_request(
                                 &handles,
                             );
                         }
+
                         let grid_movement_direction = match current_direction.0 {
                             DwarfDirection::Up => GridCoords::new(0, 1),
                             DwarfDirection::Down => GridCoords::new(0, -1),
@@ -195,37 +198,43 @@ fn process_action_request(
                             DwarfDirection::Right => GridCoords::new(1, 0),
                         };
                         let destination = dwarf.grid_coords + grid_movement_direction;
-                        let can_move_forward = true; // TODO: check walls, doors, etc.
+
+                        let can_move_forward = grid.is_passable(&destination); // TODO: Check if Dwarf has key
                         if DwarfAction::Moving == current_action.0 && can_move_forward {
-                            println!("can move foward {:?}", dwarf);
+                            info!("can move foward {:?}", dwarf);
+
                             let distance_this_frame = DWARF_MOVE_SPEED * dt;
                             dwarf.move_distance += distance_this_frame;
+
                             match current_direction.0 {
                                 DwarfDirection::Up => {
-                                    current_transform.translation.y += distance_this_frame
+                                    current_transform.translation.y += distance_this_frame;
                                 }
                                 DwarfDirection::Down => {
-                                    current_transform.translation.y -= distance_this_frame
+                                    current_transform.translation.y -= distance_this_frame;
                                 }
                                 DwarfDirection::Right => {
-                                    current_transform.translation.x += distance_this_frame
+                                    current_transform.translation.x += distance_this_frame;
                                 }
                                 DwarfDirection::Left => {
-                                    current_transform.translation.x -= distance_this_frame
+                                    current_transform.translation.x -= distance_this_frame;
                                 }
                             };
+
                             if current_direction.0 == DwarfDirection::Left {
                                 current_transform.scale.x = -1.;
                             } else {
                                 current_transform.scale.x = 1.;
                             }
                         }
+
                         completed = dwarf.move_distance >= TILE_SIZE as f32;
                         if completed {
-                            println!("completed");
+                            info!("completed");
                             dwarf.grid_coords = destination;
                             dwarf.move_distance = 0.;
                         }
+
                         update_dwarf_body_animation(
                             &mut commands,
                             dwarf.body,
