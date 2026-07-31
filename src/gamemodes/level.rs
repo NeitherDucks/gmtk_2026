@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+//use std::collections::HashSet;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
-    entities::{ChestTag, DoorTag, Lock, StartingPointTag, TrapType},
-    gamemodes::{Grid, LevelChests, LevelWalls, Tile, hand::Hand, playing::spawn_dwarves},
+    entities::{ChestTag, DoorTag, StartingPointTag, WallTag},
+    entities::{Lock, TrapType},
+    gamemodes::{Tile, hand::Hand},
 };
 
 const TILE_SIZE: i32 = 16;
@@ -14,14 +17,19 @@ pub struct LoadingGameModePlugin;
 
 impl Plugin for LoadingGameModePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LevelState::Loading), (setup, spawn_dwarves).chain());
+        app.add_systems(OnEnter(LevelState::Loading), setup);
+        app.add_systems(
+            OnTransition {
+                entered: LevelState::Loading,
+                exited: LevelState::Editing,
+            },
+            cache_item_locations,
+        );
+
         app.add_systems(
             Update,
             (
                 get_level_size,
-                cache_wall_locations,
-                cache_chest_locations,
-                cache_items_location,
                 center_camera_to_level,
                 get_hand,
                 translate_grid_coords_entities,
@@ -32,7 +40,54 @@ impl Plugin for LoadingGameModePlugin {
     }
 }
 
-pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
+#[derive(Default, Resource, Debug)]
+pub struct Grid {
+    items: HashMap<GridCoords, Tile>,
+    width: i32,
+    height: i32,
+}
+
+impl Grid {
+    pub fn get_items(&self) -> &HashMap<GridCoords, Tile> {
+        &self.items
+    }
+    pub fn get_items_mut(&mut self) -> &mut HashMap<GridCoords, Tile> {
+        &mut self.items
+    }
+    pub fn is_outside_level(&self, grid_coords: &GridCoords) -> bool {
+        grid_coords.x < 0
+            || grid_coords.y < 0
+            || grid_coords.x >= self.width
+            || grid_coords.y >= self.height
+    }
+
+    pub fn is_collision(&self, grid_coords: &GridCoords) -> bool {
+        self.is_outside_level(grid_coords)
+            || match self.items.get(grid_coords) {
+                Some(Tile::Wall)
+                | Some(Tile::Chest)
+                | Some(Tile::Dwarf)
+                | Some(Tile::Door(Lock::Gold))
+                | Some(Tile::Door(Lock::Silver)) => true,
+                Some(Tile::Trap((_, trap))) => match trap {
+                    TrapType::Nothing
+                    | TrapType::Up
+                    | TrapType::Left
+                    | TrapType::Down
+                    | TrapType::Right
+                    | TrapType::Catapult => false,
+                    TrapType::Rock => true,
+                },
+                Some(Tile::Door(Lock::Unlocked)) | None => false,
+            }
+    }
+
+    pub fn is_passable(&self, grid_coords: &GridCoords) -> bool {
+        !self.is_collision(grid_coords)
+    }
+}
+
+fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     // We spawn our selected level
     commands.spawn(LdtkWorldBundle {
         ldtk_handle: handles.test_level.clone(),
@@ -42,14 +97,10 @@ pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     // This is what selects the level inside the ldtk file.
     commands.insert_resource(LevelSelection::index(0));
 
-    commands.init_resource::<LevelWalls>();
-    commands.init_resource::<LevelChests>();
-
     commands.init_resource::<Grid>();
 }
 
-pub fn get_level_size(
-    mut level_walls: ResMut<LevelWalls>,
+fn get_level_size(
     mut grid: ResMut<Grid>,
     mut level_messages: MessageReader<LevelEvent>,
     ldtk_project_entities: Single<&LdtkProjectHandle>,
@@ -57,7 +108,6 @@ pub fn get_level_size(
 ) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
-            info!("get_level_size saw LevelEvent::Spawned for the level");
             let ldtk_project = ldtk_project_assets
                 .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
@@ -65,45 +115,41 @@ pub fn get_level_size(
                 .get_raw_level_by_iid(level_iid.get())
                 .expect("spawned level should exist in project");
 
-            level_walls.level_width = level.px_wid / TILE_SIZE;
-            level_walls.level_height = level.px_hei / TILE_SIZE;
-
             grid.width = level.px_wid / TILE_SIZE;
             grid.height = level.px_hei / TILE_SIZE;
         }
     }
 }
 
+/*
 pub fn cache_wall_locations(
     query: Query<(&GridCoords, &TileEnumTags), Added<TileEnumTags>>,
-    mut level_walls: ResMut<LevelWalls>,
-    mut grid: ResMut<Grid>,
+    mut level_walls: ResMut<LevelWallCache>,
 ) {
     for (coords, tag) in query {
-        if tag.tags.contains(&"Wall".to_string()) {
-            level_walls.wall_locations.insert(*coords);
-            grid.items.insert(*coords, Tile::Wall);
-        }
+        level_walls.wall_locations.insert(*coords);
     }
 }
+*/
 
-pub fn cache_items_location(
+fn cache_item_locations(
     mut grid: ResMut<Grid>,
-    query: Query<
-        (
-            Entity,
-            &GridCoords,
-            Option<&ChestTag>,
-            Option<&DoorTag>,
-            Option<&Lock>,
-            Option<&StartingPointTag>,
-            Option<&TrapType>,
-        ),
-        Added<GridCoords>,
-    >,
+    query: Query<(
+        Entity,
+        &GridCoords,
+        Option<&WallTag>,
+        Option<&ChestTag>,
+        Option<&DoorTag>,
+        Option<&Lock>,
+        Option<&StartingPointTag>,
+        Option<&TrapType>,
+    )>,
 ) {
-    for (entity, coord, chest, door, lock, start, trap) in &query {
-        if chest.is_some() {
+    info!("cache_item_locations");
+    for (entity, coord, wall, chest, door, lock, start, trap) in &query {
+        if wall.is_some() {
+            grid.items.insert(*coord, Tile::Wall);
+        } else if chest.is_some() {
             grid.items.insert(*coord, Tile::Chest);
         } else if door.is_some() {
             grid.items
@@ -116,17 +162,19 @@ pub fn cache_items_location(
     }
 }
 
+/*
 pub fn cache_chest_locations(
     mut level_chests: ResMut<LevelChests>,
-    chests: Query<&GridCoords, Added<ChestTag>>,
+    chests: Query<&GridCoords, With<ChestTag>>,
 ) {
     for coords in chests {
         info!("Found chest at: {coords:?}");
         level_chests.chest_locations.insert(*coords);
     }
 }
+*/
 
-pub fn get_hand(
+fn get_hand(
     mut commands: Commands,
     mut level_messages: MessageReader<LevelEvent>,
     ldtk_project_entities: Single<&LdtkProjectHandle>,
@@ -134,7 +182,6 @@ pub fn get_hand(
 ) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
-            info!("get_hand saw LevelEvent::Spawned for the level");
             let ldtk_project = ldtk_project_assets
                 .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
@@ -167,7 +214,7 @@ pub fn get_hand(
     }
 }
 
-pub fn center_camera_to_level(
+fn center_camera_to_level(
     mut level_messages: MessageReader<LevelEvent>,
     ldtk_project_entities: Single<&LdtkProjectHandle>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
@@ -175,7 +222,6 @@ pub fn center_camera_to_level(
 ) {
     for level_event in level_messages.read() {
         if let LevelEvent::Spawned(level_iid) = level_event {
-            info!("center_camera_to_level saw LevelEvent::Spawned for the level");
             let ldtk_project = ldtk_project_assets
                 .get(*ldtk_project_entities)
                 .expect("LdtkProject should be loaded when level is spawned");
@@ -197,7 +243,7 @@ pub fn center_camera_to_level(
     }
 }
 
-pub fn handle_level_loaded(
+fn handle_level_loaded(
     mut level_messages: MessageReader<LevelEvent>,
     mut next_level_state: ResMut<NextState<LevelState>>,
 ) {
@@ -211,7 +257,7 @@ pub fn handle_level_loaded(
     }
 }
 
-pub fn translate_grid_coords_entities(
+fn translate_grid_coords_entities(
     mut grid_coords_entities: Query<(&mut Transform, &GridCoords), Changed<GridCoords>>,
 ) {
     for (mut transform, grid_coords) in grid_coords_entities.iter_mut() {

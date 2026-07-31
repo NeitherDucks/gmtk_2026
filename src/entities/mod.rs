@@ -17,6 +17,7 @@ pub use lock::Lock;
 pub use startingpoint::StartingPointTag;
 pub use trap::{Trap, TrapTag};
 pub use traptype::TrapType;
+pub use wall::WallTag;
 
 use chest::ChestEntityPlugin;
 use door::DoorEntityPlugin;

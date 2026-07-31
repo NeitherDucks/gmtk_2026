@@ -7,9 +7,9 @@ use crate::asset_loading::AssetHandles;
 use crate::entities::{GoalTag, StartingPointTag};
 use crate::gamemodes::dwarf::{update_dwarf_body_animation, update_dwarf_parts_animation};
 use crate::gamemodes::{
-    DwarfAction, DwarfActionComponent, DwarfActionRequest, DwarfCharacter, DwarfColor,
-    DwarfColorComponent, DwarfDirection, DwarfDirectionComponent, DwarfResource,
-    DwarfResourceComponent, DwarfTool, DwarfToolComponent, Grid, Requests,
+    DwarfAction, DwarfActionComponent, DwarfActionRequest, DwarfCharacter, DwarfColorComponent,
+    DwarfDirection, DwarfDirectionComponent, DwarfResource, DwarfResourceComponent,
+    DwarfToolComponent, Requests, level::Grid,
 };
 
 use bevy_ecs_ldtk::prelude::*;
@@ -21,19 +21,63 @@ pub struct PlayingGameModePlugin;
 
 impl Plugin for PlayingGameModePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LevelState::Playing), (setup, spawn_dwarves));
+        app.add_systems(
+            OnEnter(LevelState::Playing),
+            (setup, spawn_dwarves, begin_action_generation).chain(),
+        );
         app.add_systems(Update, check_goal.run_if(in_state(LevelState::Playing)));
         app.add_systems(
             Update,
-            ((dev_input, process_action_request).chain()).run_if(in_state(LevelState::Playing)),
+            (
+                dev_input,
+                player_input,
+                tick_action_generation_timer.run_if(resource_exists::<ActionGenerationTimer>),
+                process_action_request,
+            )
+                .run_if(in_state(LevelState::Playing))
+                .chain(),
         );
-        app.add_systems(OnExit(LevelState::Playing), cleanup);
+        app.add_systems(
+            OnExit(LevelState::Playing),
+            (end_action_generation, cleanup),
+        );
     }
 }
 
 fn setup() {}
 
-pub fn spawn_dwarves(
+#[derive(Resource, Default)]
+pub struct ActionGenerationTimer(Timer);
+
+impl ActionGenerationTimer {
+    pub fn new() -> Self {
+        Self(Timer::from_seconds(1.5, TimerMode::Repeating))
+    }
+}
+
+fn tick_action_generation_timer(
+    time: Res<Time>,
+    mut action_timer: ResMut<ActionGenerationTimer>,
+    dwarves_query: Query<&mut Requests>,
+) {
+    action_timer.0.tick(time.delta());
+
+    if action_timer.0.just_finished() {
+        for mut reqs in dwarves_query {
+            reqs.0.push_back(DwarfActionRequest::MoveForward);
+        }
+    }
+}
+
+fn begin_action_generation(mut commands: Commands) {
+    commands.insert_resource(ActionGenerationTimer::new());
+}
+
+fn end_action_generation(mut commands: Commands) {
+    commands.remove_resource::<ActionGenerationTimer>();
+}
+
+fn spawn_dwarves(
     mut commands: Commands,
     starting_points: Query<
         (
@@ -44,15 +88,13 @@ pub fn spawn_dwarves(
         ),
         With<StartingPointTag>,
     >,
+    handles: Res<AssetHandles>,
 ) {
     // go through StartingSpots in the level, add a Dwarf for each one with ActionRequest(DwarfActionRequest::MoveForward) added to their deque
     for (coords, dwarf_color, dwarf_tool, dwarf_direction) in starting_points.iter() {
         const BODY_Z: f32 = 10.0_f32;
 
-        let (tx, ty) = (
-            coords.x * TILE_SIZE + TILE_SIZE / 2,
-            coords.y * TILE_SIZE + TILE_SIZE / 2,
-        );
+        let (tx, ty) = (coords.x * TILE_SIZE - TILE_SIZE / 2, coords.y * TILE_SIZE + TILE_SIZE + 2);
 
         info!("put a dwarf at {}, {}", coords.x, coords.y);
         let body_action = DwarfAction::Idle;
@@ -79,21 +121,27 @@ pub fn spawn_dwarves(
                 DwarfToolComponent(dwarf_tool.0),
                 DwarfDirectionComponent(dwarf_direction.0),
                 DwarfResourceComponent(resource),
-                Requests(VecDeque::from([
-                    // test set of initial requests to complete when spawned
-                    DwarfActionRequest::ChangeColor(DwarfColor::Purple),
-                    DwarfActionRequest::ChangeTool(DwarfTool::Pickaxe),
-                    DwarfActionRequest::ChangeTool(DwarfTool::Dynamite),
-                    DwarfActionRequest::ChangeDirection(DwarfDirection::Left),
-                    DwarfActionRequest::MoveForward,
-                    DwarfActionRequest::ChangeColor(DwarfColor::Red),
-                ])),
+                Requests(VecDeque::default()),
             ))
             .id();
         commands
             .entity(character_id)
             .add_children(&[body_id, parts_id]);
-        //break;  // hack for just 1 dwarf
+        update_dwarf_body_animation(
+            &mut commands,
+            body_id,
+            &dwarf_color.0,
+            &body_action,
+            &handles,
+        );
+        update_dwarf_parts_animation(
+            &mut commands,
+            parts_id,
+            &body_action,
+            &dwarf_tool.0,
+            &resource,
+            &handles,
+        );
     }
 }
 
@@ -267,57 +315,15 @@ fn process_action_request(
     }
 }
 
-pub fn dev_input(
-    input: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(
-        Entity,
-        &DwarfColorComponent,
-        &DwarfActionComponent,
-        &DwarfToolComponent,
-        &mut Requests,
-    )>,
-    mut next_state: ResMut<NextState<LevelState>>,
-) {
-    for (_e, dwarf_color, _dwarf_action, dwarf_tool, mut reqs) in query.iter_mut() {
-        if input.just_pressed(KeyCode::KeyC) {
-            let next_color = match dwarf_color.0 {
-                DwarfColor::Blue => DwarfColor::Purple,
-                DwarfColor::Purple => DwarfColor::Red,
-                DwarfColor::Red => DwarfColor::Yellow,
-                DwarfColor::Yellow => DwarfColor::Blue,
-            };
-            reqs.0
-                .push_back(DwarfActionRequest::ChangeColor(next_color));
-        } else if input.just_pressed(KeyCode::KeyT) {
-            let next_tool = match dwarf_tool.0 {
-                DwarfTool::BareHands => DwarfTool::Shovel,
-                DwarfTool::Shovel => DwarfTool::Dynamite,
-                DwarfTool::Dynamite => DwarfTool::MultiTool,
-                DwarfTool::MultiTool => DwarfTool::Pickaxe,
-                DwarfTool::Pickaxe => DwarfTool::BareHands,
-            };
-            reqs.0.push_back(DwarfActionRequest::ChangeTool(next_tool));
-        } else if input.pressed(KeyCode::KeyA) {
-            reqs.0
-                .push_back(DwarfActionRequest::ChangeDirection(DwarfDirection::Left));
-            reqs.0.push_back(DwarfActionRequest::MoveForward);
-        } else if input.pressed(KeyCode::KeyD) {
-            reqs.0
-                .push_back(DwarfActionRequest::ChangeDirection(DwarfDirection::Right));
-            reqs.0.push_back(DwarfActionRequest::MoveForward);
-        } else if input.just_pressed(KeyCode::KeyX) {
-            // TODO: handle other actions, like Shoveling
-            let next_action = DwarfAction::Idle;
-            reqs.0
-                .push_back(DwarfActionRequest::TakeAction(next_action));
-        }
-    }
+fn dev_input(_input: Res<ButtonInput<KeyCode>>) {}
+
+fn player_input(input: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<LevelState>>) {
     if input.just_pressed(KeyCode::Escape) {
         next_state.set(LevelState::Editing);
     }
 }
 
-pub fn check_goal(
+fn check_goal(
     _dwarf: Query<(&DwarfCharacter, &GridCoords)>,
     _goals: Query<&GridCoords, With<GoalTag>>,
 ) {

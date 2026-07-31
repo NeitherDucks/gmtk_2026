@@ -1,11 +1,6 @@
 use crate::{
-    LevelState,
-    asset_loading::AssetHandles,
-    entities::Trap,
-    entities::TrapTag,
-    entities::TrapType,
-    gamemodes::hand::Hand,
-    gamemodes::{Grid, Tile},
+    LevelState, asset_loading::AssetHandles, entities::Trap, entities::TrapTag, entities::TrapType,
+    gamemodes::Tile, gamemodes::hand::Hand, gamemodes::level::Grid,
 };
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::GridCoords;
@@ -105,13 +100,14 @@ fn update_added_trap(
     query: Query<(Entity, &GridCoords, &TrapType), Added<GridCoords>>,
 ) {
     for (entity, coord, trap) in &query {
-        grid.items.insert(*coord, Tile::Trap((entity, *trap)));
+        grid.get_items_mut()
+            .insert(*coord, Tile::Trap((entity, *trap)));
     }
 }
 
 fn update_removed_trap(mut grid: ResMut<Grid>, mut query: RemovedComponents<GridCoords>) {
     query.read().for_each(|entity| {
-        grid.items.retain(|_, v| {
+        grid.get_items_mut().retain(|_, v| {
             if let Tile::Trap((e, _)) = v
                 && e == &entity
             {
@@ -166,7 +162,7 @@ fn update_inputs(
         // Big if
         if mouse.just_pressed(MouseButton::Right)
             && let Some(coord) = coord.0
-            && let Some(item) = grid.items.get(&coord)
+            && let Some(item) = grid.get_items().get(&coord)
             && let Tile::Trap((entity, trap)) = item
             && traps.contains(*entity)
             && hand.increment(trap).is_some()
