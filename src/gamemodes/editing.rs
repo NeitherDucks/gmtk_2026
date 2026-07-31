@@ -1,6 +1,6 @@
 use crate::{
     LevelState, asset_loading::AssetHandles, entities::Trap, entities::TrapTag, entities::TrapType,
-    gamemodes::Tile, gamemodes::hand::Hand, gamemodes::level::Grid,
+    gamemodes::Tile, gamemodes::hand::Hand, gamemodes::grid::*,
 };
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::GridCoords;
@@ -77,48 +77,6 @@ fn spawn_trap_ghost(
     ));
 }
 
-fn update_mouse_pos(
-    mut mouse: ResMut<MouseGridPosition>,
-    window: Single<&Window, With<PrimaryWindow>>,
-    camera: Single<(&Camera, &GlobalTransform)>,
-) {
-    if let Some(cursor) = window
-        .cursor_position()
-        .and_then(|c| camera.0.viewport_to_world_2d(camera.1, c).ok())
-    {
-        let coords =
-            bevy_ecs_ldtk::utils::translation_to_grid_coords(cursor, IVec2::splat(GRID_SIZE));
-
-        mouse.0 = Some(coords);
-    } else {
-        mouse.0 = None;
-    }
-}
-
-fn update_added_trap(
-    mut grid: ResMut<Grid>,
-    query: Query<(Entity, &GridCoords, &TrapType), Added<GridCoords>>,
-) {
-    for (entity, coord, trap) in &query {
-        grid.get_items_mut()
-            .insert(*coord, Tile::Trap((entity, *trap)));
-    }
-}
-
-fn update_removed_trap(mut grid: ResMut<Grid>, mut query: RemovedComponents<GridCoords>) {
-    query.read().for_each(|entity| {
-        grid.get_items_mut().retain(|_, v| {
-            if let Tile::Trap((e, _)) = v
-                && e == &entity
-            {
-                false
-            } else {
-                true
-            }
-        });
-    });
-}
-
 fn update_trap_ghost(
     mut ghost: Single<(&mut Transform, &mut Visibility, &mut Sprite), With<TrapGhostTag>>,
     mouse: Res<MouseGridPosition>,
@@ -138,6 +96,31 @@ fn update_trap_ghost(
         *ghost.1 = Visibility::Inherited;
     } else {
         *ghost.1 = Visibility::Hidden;
+    }
+}
+
+fn cleanup_trap_ghost(mut commands: Commands, ghosts: Query<Entity, With<TrapGhostTag>>) {
+    // Remove any previous ghosts
+    for entity in ghosts {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn update_mouse_pos(
+    mut mouse: ResMut<MouseGridPosition>,
+    window: Single<&Window, With<PrimaryWindow>>,
+    camera: Single<(&Camera, &GlobalTransform)>,
+) {
+    if let Some(cursor) = window
+        .cursor_position()
+        .and_then(|c| camera.0.viewport_to_world_2d(camera.1, c).ok())
+    {
+        let coords =
+            bevy_ecs_ldtk::utils::translation_to_grid_coords(cursor, IVec2::splat(GRID_SIZE));
+
+        mouse.0 = Some(coords);
+    } else {
+        mouse.0 = None;
     }
 }
 
@@ -220,13 +203,6 @@ fn update_inputs(
                 commands.remove_resource::<PlacingTrap>();
             }
         }
-    }
-}
-
-fn cleanup_trap_ghost(mut commands: Commands, ghosts: Query<Entity, With<TrapGhostTag>>) {
-    // Remove any previous ghosts
-    for entity in ghosts {
-        commands.entity(entity).despawn();
     }
 }
 

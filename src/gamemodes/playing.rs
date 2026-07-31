@@ -9,7 +9,7 @@ use crate::gamemodes::dwarf::{update_dwarf_body_animation, update_dwarf_parts_an
 use crate::gamemodes::{
     DwarfAction, DwarfActionComponent, DwarfActionRequest, DwarfCharacter, DwarfColorComponent,
     DwarfDirection, DwarfDirectionComponent, DwarfResource, DwarfResourceComponent,
-    DwarfToolComponent, Requests, level::Grid,
+    DwarfToolComponent, Requests, grid::Grid,
 };
 
 use bevy_ecs_ldtk::prelude::*;

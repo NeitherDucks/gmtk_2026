@@ -13,6 +13,7 @@ mod dwarfresource;
 mod dwarftool;
 mod editing;
 mod editing_ui;
+mod grid;
 mod hand;
 mod level;
 mod playing;
