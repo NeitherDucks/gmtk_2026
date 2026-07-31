@@ -4,17 +4,18 @@ use bevy::prelude::*;
 
 use crate::LevelState;
 use crate::asset_loading::AssetHandles;
-use crate::entities::{GoalTag, StartingPointTag};
+use crate::entities::{GoalTag, Lock, StartingPointTag, TrapType};
 use crate::gamemodes::dwarf::{update_dwarf_body_animation, update_dwarf_parts_animation};
 use crate::gamemodes::{
     DwarfAction, DwarfActionComponent, DwarfActionRequest, DwarfCharacter, DwarfColorComponent,
     DwarfDirection, DwarfDirectionComponent, DwarfResource, DwarfResourceComponent,
-    DwarfToolComponent, Requests, grid::Grid,
+    DwarfToolComponent, Requests, Tile, grid::Grid,
 };
 
 use bevy_ecs_ldtk::prelude::*;
 
 const DWARF_MOVE_SPEED: f32 = 48.0;
+const GRID_SIZE: i32 = 16;
 const TILE_SIZE: i32 = 16;
 
 pub struct PlayingGameModePlugin;
@@ -94,9 +95,8 @@ fn spawn_dwarves(
     for (coords, dwarf_color, dwarf_tool, dwarf_direction) in starting_points.iter() {
         const BODY_Z: f32 = 10.0_f32;
 
-        let (tx, ty) = (coords.x * TILE_SIZE - TILE_SIZE / 2, coords.y * TILE_SIZE + TILE_SIZE + 2);
+        let t = bevy_ecs_ldtk::utils::grid_coords_to_translation(*coords, IVec2::splat(GRID_SIZE));
 
-        info!("put a dwarf at {}, {}", coords.x, coords.y);
         let body_action = DwarfAction::Idle;
         let resource = DwarfResource::Gold;
 
@@ -115,7 +115,7 @@ fn spawn_dwarves(
                     parts: parts_id,
                     move_distance: 0.,
                 },
-                Transform::from_translation(Vec3::new(tx as f32, ty as f32, BODY_Z)),
+                Transform::from_translation(Vec3::new(t.x as f32, t.y as f32, BODY_Z)),
                 DwarfActionComponent(body_action),
                 DwarfColorComponent(dwarf_color.0),
                 DwarfToolComponent(dwarf_tool.0),
@@ -124,6 +124,10 @@ fn spawn_dwarves(
                 Requests(VecDeque::default()),
             ))
             .id();
+        info!(
+            "put dwarf {:?} at {}, {} = {:?}",
+            character_id, coords.x, coords.y, t
+        );
         commands
             .entity(character_id)
             .add_children(&[body_id, parts_id]);
@@ -221,13 +225,8 @@ fn process_action_request(
                         );
                     }
                     DwarfActionRequest::MoveForward => {
-                        info!(
-                            "MoveForward completed={completed} {:?} {:?}",
-                            dwarf, current_action.0
-                        );
-
                         if DwarfAction::Idle == current_action.0 {
-                            info!("move to Moving from Idle");
+                            info!("{:?} move to Moving from Idle", dwarf);
                             current_action.0 = DwarfAction::Moving;
                             dwarf.move_distance = 0.0;
                             update_dwarf_body_animation(
@@ -246,11 +245,28 @@ fn process_action_request(
                             DwarfDirection::Right => GridCoords::new(1, 0),
                         };
                         let destination = dwarf.grid_coords + grid_movement_direction;
+                        let mut cannot_move_forward = false;
+                        let at_destination = grid.get_tile(&destination);
+                        if let Some(dest_tile) = at_destination {
+                            match dest_tile {
+                                Tile::Wall => cannot_move_forward = true,
+                                Tile::Chest => cannot_move_forward = true,
+                                Tile::Dwarf => cannot_move_forward = true,
+                                Tile::Door(lock) => {
+                                    cannot_move_forward = match lock {
+                                        Lock::Unlocked => false,
+                                        Lock::Silver => true,
+                                        Lock::Gold => true,
+                                    }
+                                }
+                                Tile::Trap((_e, _traptype)) => {}
+                            }
+                        }
 
-                        let can_move_forward = grid.is_passable(&destination); // TODO: Check if Dwarf has key
+                        let can_move_forward =
+                            !cannot_move_forward && grid.is_passable(&destination); // TODO: Check if Dwarf has key
+
                         if DwarfAction::Moving == current_action.0 && can_move_forward {
-                            info!("can move foward {:?}", dwarf);
-
                             let distance_this_frame = DWARF_MOVE_SPEED * dt;
                             dwarf.move_distance += distance_this_frame;
 
@@ -278,9 +294,29 @@ fn process_action_request(
 
                         completed = dwarf.move_distance >= TILE_SIZE as f32;
                         if completed {
-                            info!("completed");
+                            info!("{:?} completed {:?}", dwarf, first_request);
                             dwarf.grid_coords = destination;
                             dwarf.move_distance = 0.;
+                            // does something happen when we get here?
+                            if let Some(Tile::Trap((_e, traptype))) = at_destination {
+                                match traptype {
+                                    TrapType::Left /*| TrapType::Up */ => {
+                                        info!("{:?} turning left", dwarf);
+                                        let new_direction = turn_left(current_direction.0);
+                                        reqs.0.push_back(DwarfActionRequest::ChangeDirection(
+                                            new_direction,
+                                        ));
+                                    }
+                                    TrapType::Right /*| TrapType::Down */ => {
+                                        info!("{:?} turning right", dwarf);
+                                        let new_direction = turn_right(current_direction.0);
+                                        reqs.0.push_back(DwarfActionRequest::ChangeDirection(
+                                            new_direction,
+                                        ));
+                                    }
+                                    _ => {}
+                                }
+                            }
                         }
 
                         update_dwarf_body_animation(
@@ -312,6 +348,24 @@ fn process_action_request(
                 reqs.0.pop_front();
             }
         }
+    }
+}
+
+fn turn_left(old_dir: DwarfDirection) -> DwarfDirection {
+    match old_dir {
+        DwarfDirection::Up => DwarfDirection::Right,
+        DwarfDirection::Left => DwarfDirection::Down,
+        DwarfDirection::Right => DwarfDirection::Up,
+        DwarfDirection::Down => DwarfDirection::Left,
+    }
+}
+
+fn turn_right(old_dir: DwarfDirection) -> DwarfDirection {
+    match old_dir {
+        DwarfDirection::Up => DwarfDirection::Left,
+        DwarfDirection::Left => DwarfDirection::Up,
+        DwarfDirection::Right => DwarfDirection::Down,
+        DwarfDirection::Down => DwarfDirection::Right,
     }
 }
 

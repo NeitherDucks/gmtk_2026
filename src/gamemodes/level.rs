@@ -1,11 +1,12 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
+use crate::entities::{ChestTag, DoorTag, StartingPointTag, WallTag};
 use crate::{
     LevelState,
     asset_loading::AssetHandles,
-    entities::TrapType,
-    gamemodes::{grid::*, hand::Hand},
+    entities::{Lock, TrapType},
+    gamemodes::{Tile, grid::*, hand::Hand},
 };
 
 const TILE_SIZE: i32 = 16;
@@ -17,7 +18,7 @@ impl Plugin for LoadingGameModePlugin {
         app.add_systems(OnEnter(LevelState::Loading), setup);
         app.add_systems(
             OnTransition {
-                entered: LevelState::Loading,
+                entered: LevelState::Playing,
                 exited: LevelState::Editing,
             },
             cache_item_locations,
@@ -161,4 +162,39 @@ fn translate_grid_coords_entities(
             bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(TILE_SIZE))
                 .extend(transform.translation.z);
     }
+}
+
+fn cache_item_locations(
+    mut grid: ResMut<Grid>,
+    query: Query<(
+        Entity,
+        &GridCoords,
+        Option<&WallTag>,
+        Option<&ChestTag>,
+        Option<&DoorTag>,
+        Option<&Lock>,
+        Option<&StartingPointTag>,
+        Option<&TrapType>,
+    )>,
+) {
+    info!("cache_item_locations");
+    for (entity, coord, wall, chest, door, lock, start, trap) in &query {
+        if wall.is_some() {
+            info!("add wall at {},{}", coord.x, coord.y);
+            grid.add_to(*coord, Tile::Wall);
+        } else if chest.is_some() {
+            info!("add chest at {},{}", coord.x, coord.y);
+            grid.add_to(*coord, Tile::Chest);
+        } else if door.is_some() {
+            info!("add door at {},{}", coord.x, coord.y);
+            grid.add_to(*coord, Tile::Door(lock.copied().unwrap_or_default()));
+        } else if start.is_some() {
+            info!("add dwarf at {},{}", coord.x, coord.y);
+            grid.add_to(*coord, Tile::Dwarf);
+        } else if let Some(trap) = trap {
+            info!("add ({:?}, {:?}) at {},{}", entity, *trap, coord.x, coord.y);
+            grid.add_to(*coord, Tile::Trap((entity, *trap)));
+        }
+    }
+    info!("{:?}", grid);
 }
