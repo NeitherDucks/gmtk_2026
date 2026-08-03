@@ -18,6 +18,7 @@ impl Plugin for MenuPlugin {
             .add_systems(OnEnter(GameState::Options), options::setup)
             .add_systems(OnExit(GameState::Options), options::cleanup)
             .add_systems(OnEnter(GameState::Credits), credits::setup)
+            .add_systems(Update, credits::update.run_if(in_state(GameState::Credits)))
             .add_systems(OnExit(GameState::Credits), credits::cleanup);
     }
 }
