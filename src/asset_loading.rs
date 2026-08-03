@@ -1,8 +1,13 @@
 //! Anything regarding loading assets
 
-use bevy::{asset::UntypedAssetId, prelude::*};
+use bevy::{
+    asset::{AssetLoader, UntypedAssetId},
+    prelude::*,
+};
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_ldtk::LdtkProjectHandle;
+use serde::Deserialize;
+use thiserror::Error;
 
 use crate::GameState;
 
@@ -10,20 +15,22 @@ pub struct LoadingPlugin;
 
 impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(GameState::LoadingAssets),
-            (setup_loading_screen, load_assets).chain(),
-        )
-        .add_systems(
-            OnExit(GameState::LoadingAssets),
-            (cleanup_loading_screen, cleaup_loading_resource),
-        )
-        .add_systems(
-            Update,
-            (check_assets, update_loading_screen)
-                .chain()
-                .run_if(in_state(GameState::LoadingAssets)),
-        );
+        app.init_asset::<CreditsAsset>()
+            .init_asset_loader::<CreditsAssetLoader>()
+            .add_systems(
+                OnEnter(GameState::LoadingAssets),
+                (setup_loading_screen, load_assets).chain(),
+            )
+            .add_systems(
+                OnExit(GameState::LoadingAssets),
+                (cleanup_loading_screen, cleaup_loading_resource),
+            )
+            .add_systems(
+                Update,
+                (check_assets, update_loading_screen)
+                    .chain()
+                    .run_if(in_state(GameState::LoadingAssets)),
+            );
     }
 }
 
@@ -60,6 +67,8 @@ asset_handles! {
     test_level: LdtkProjectHandle = "test.ldtk",
 
     music: Handle<AudioSource> = "music/dwarves_music.wav",
+
+    credits: Handle<CreditsAsset> = "credits.ron",
 
     dwarf_body_blue_idle: Handle<Aseprite> = "dwarves/body/Blue/Idle.aseprite",
     dwarf_body_blue_moving: Handle<Aseprite> = "dwarves/body/Blue/Moving.aseprite",
@@ -227,4 +236,54 @@ fn check_assets(
 /// Remove the `LoadingState` resource once we don't need it anymore
 fn cleaup_loading_resource(mut commands: Commands) {
     commands.remove_resource::<LoadingState>();
+}
+
+#[derive(Debug, TypePath, Asset, Deserialize)]
+pub struct CreditsAsset(pub Vec<CreditsAssetSection>);
+
+#[derive(Debug, Deserialize)]
+pub struct CreditsAssetSection {
+    pub name: String,
+    pub items: Vec<CreditsAssetItem>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreditsAssetItem {
+    pub item: String,
+    pub url: String,
+}
+
+#[derive(Debug, Error)]
+enum CreditsAssetLoaderError {
+    #[error("Could not load credits: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Could not parse RON: {0}")]
+    Ron(#[from] ron::error::SpannedError),
+}
+
+#[derive(Debug, Default, TypePath)]
+struct CreditsAssetLoader;
+
+impl AssetLoader for CreditsAssetLoader {
+    type Asset = CreditsAsset;
+    type Settings = ();
+    type Error = CreditsAssetLoaderError;
+
+    async fn load(
+        &self,
+        reader: &mut dyn bevy::asset::io::Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut bevy::asset::LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+
+        let credits = ron::de::from_bytes::<CreditsAsset>(&bytes)?;
+
+        Ok(credits)
+    }
+
+    fn extensions(&self) -> &[&str] {
+        &["ron"]
+    }
 }

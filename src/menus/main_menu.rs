@@ -3,7 +3,7 @@ use bevy::{audio::Volume, prelude::*};
 use crate::{
     GameState,
     asset_loading::AssetHandles,
-    widgets::{fancy_pane, menu_button},
+    widgets::{fancy_pane, fullscreen_node, menu_button},
 };
 
 #[derive(Component, Default, Clone)]
@@ -15,12 +15,7 @@ pub struct MainMenuMusicTag;
 pub fn setup(mut commands: Commands, handles: Res<AssetHandles>) {
     commands.queue_spawn_scene(bsn! {
         MainMenuTag
-        Node {
-            width: percent(100),
-            height: percent(100),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-        }
+        fullscreen_node()
         Children [
             Node {
                 width: px(378*2 + 160),

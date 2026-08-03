@@ -17,7 +17,7 @@ https://shikashipx.itch.io/shikashis-fantasy-icons-pack ("LICENSE: You can use a
 https://www.dafont.com/scriptorium.font by jeti ("LICENSE: You are free to use this font for personal or commercial projects, all I ask is that you include credit. Licensed under CC BY 4.0")
 
 Tools Used
-Visual Studio Code, GitKraken, Aseprite, LDtk, [mariano's tools used], Zed
+Visual Studio Code, GitKraken, Aseprite, LDtk, Abelton Live, Zed
 
 Generative AI was not used for code or assets.
 

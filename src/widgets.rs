@@ -19,6 +19,17 @@ const ITEM_BUTTON_SELECTED: Rect = Rect {
 #[derive(Debug, Component, Clone, Default)]
 pub struct TrapAmount(u32);
 
+pub fn fullscreen_node() -> impl Scene {
+    bsn! {
+        Node {
+            width: percent(100),
+            height: percent(100),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+        }
+    }
+}
+
 pub fn fancy_pane() -> impl Scene {
     let slicer = TextureSlicer {
         border: BorderRect::all(32.0),

@@ -1,0 +1,60 @@
+([
+    (
+        name: "Code & Design",
+        items: [
+            (item: "NeitherDucks", url: "https://neitherducks.itch.io"),
+            (item: "targrub", url: "https://targames.itch.io"),
+        ]
+    ),
+    (
+        name: "Music & SFX",
+        items: [
+            (item: "Mariano Mendez", url: "https://marianomendezb.itch.io"),
+        ]
+    ),
+    (
+        name: "Assets",
+        items: [
+            (item: "Pixel Dwarfs by VEGA", url: "https://vegaboo.itch.io/pixel-dwarfs"),
+            (item: "Dungeon Tileset II by PIXEL_POEM", url: "https://pixel-poem.itch.io/dungeon-assetpuck"),
+            (item: "Free Dungeon Objects Pixel Assets by CRAFTPIX", url: "https://free-game-assets.itch.io/free-pixel-art-dungeon-objects-asset-pack"),
+            (item: "Dark Ages UI Assets by Hypnobius", url: "https://hypnobius.itch.io/dark-ages-ui"),
+            (item: "Fantasy Icon Pack by Shikashi", url: "https://shikashipx.itch.io/shikashis-fantasy-icons-pack"),
+            (item: "Scriptorium by jeti", url: "https://www.dafont.com/scriptorium.font"),
+            // (item: "", url: ""),
+        ]
+    ),
+    (
+        name: "Tools",
+        items: [
+            (item: "Abelton Live", url: "https://www.ableton.com/en/live/"),
+            (item: "Aseprite", url: "https://www.aseprite.org/"),
+            (item: "GitKraken", url: "https://www.gitkraken.com/"),
+            (item: "LDtk", url: "https://ldtk.io/"),
+            (item: "Visual Studio Code", url: "https://code.visualstudio.com/"),
+            (item: "Zed", url: "https://zed.dev/"),
+        ]
+    ),
+    (
+        name: "Crates",
+        items: [
+            (item: "bevy", url: "https://crates.io/crates/bevy"),
+            (item: "bevy_enhanced_input", url: "https://crates.io/crates/bevy_enhanced_input"),
+            (item: "bevy_tweening", url: "https://crates.io/crates/bevy_tweening"),
+            (item: "bevy_framepace", url: "https://crates.io/crates/bevy_framepace"),
+            (item: "rand", url: "https://crates.io/crates/rand"),
+            (item: "rand_core", url: "https://crates.io/crates/rand_core"),
+            (item: "rand_chacha", url: "https://crates.io/crates/rand_chacha"),
+            (item: "bevy_rand", url: "https://crates.io/crates/bevy_rand"),
+            (item: "bevy_prng", url: "https://crates.io/crates/bevy_prng"),
+            (item: "bevy-inspector-egui", url: "https://crates.io/crates/bevy-inspector-egui"),
+            (item: "tracing", url: "https://crates.io/crates/tracing"),
+            (item: "bevy_ecs_ldtk", url: "https://crates.io/crates/bevy_ecs_ldtk"),
+            (item: "bevy_ecs_tilemap", url: "https://crates.io/crates/bevy_ecs_tilemap"),
+            (item: "bevy_aseprite_ultra", url: "https://crates.io/crates/bevy_aseprite_ultra"),
+            (item: "thiserror", url: "https://crates.io/crates/thiserror"),
+            (item: "serde", url: "https://crates.io/crates/serde"),
+            (item: "ron", url: "https://crates.io/crates/ron"),
+        ]
+    ),
+])
