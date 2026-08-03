@@ -57,4 +57,16 @@
             (item: "ron", url: "https://crates.io/crates/ron"),
         ]
     ),
+    (
+        name: "",
+        items: [
+            (item: "No generative AI was used for code or assets.", url: "https://itch.io/jam/gmtk-jam-2026"),
+        ]
+    ),
+    (
+        name: "",
+        items: [
+            (item: "This game was made for the GMTK 2026 game jam.", url: "https://itch.io/jam/gmtk-jam-2026"),
+        ]
+    ),
 ])
